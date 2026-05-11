@@ -12,23 +12,32 @@ def seed():
         db.add(admin)
         db.flush()
 
-    tag_python = Tag(name="Python")
-    tag_fastapi = Tag(name="FastAPI")
-    db.add_all([tag_python, tag_fastapi])
-    db.flush()
+    tags = {}
+    for name in ["Python", "FastAPI"]:
+        tag = db.query(Tag).filter_by(name=name).first()
+        if not tag:
+            tag = Tag(name=name)
+            db.add(tag)
+            db.flush()
+        tags[name] = tag
 
-    post = Post(
-        title="Hello World",
-        slug="hello-world",
-        content="This is my first blog post. Welcome to my blog!",
-        summary="First post",
-        author_id=admin.id,
-        tags=[tag_python, tag_fastapi],
-    )
-    db.add(post)
-    db.commit()
+    existing = db.query(Post).filter_by(slug="hello-world").first()
+    if not existing:
+        post = Post(
+            title="Hello World",
+            slug="hello-world",
+            content="This is my first blog post. Welcome to my blog!",
+            summary="First post",
+            author_id=admin.id,
+            tags=list(tags.values()),
+        )
+        db.add(post)
+        db.commit()
+        print("Seed data inserted: admin user + 2 tags + 1 post")
+    else:
+        print("Seed data already exists, skipping")
+
     db.close()
-    print("Seed data inserted: admin user + 2 tags + 1 post")
 
 
 if __name__ == "__main__":
