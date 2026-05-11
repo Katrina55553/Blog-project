@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 # ── Auth ──
@@ -62,6 +62,11 @@ class PostListResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @field_validator("tags", mode="before")
+    @classmethod
+    def coerce_tags(cls, v):
+        return [getattr(t, "name", t) for t in v]
+
 
 class PostDetailResponse(BaseModel):
     id: int
@@ -76,6 +81,11 @@ class PostDetailResponse(BaseModel):
     tags: list[str]
 
     model_config = {"from_attributes": True}
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def coerce_tags(cls, v):
+        return [getattr(t, "name", t) for t in v]
 
 
 # ── Tag ──
