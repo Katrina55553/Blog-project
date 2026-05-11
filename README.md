@@ -16,7 +16,7 @@ A minimalist, high-performance personal technical blog system powered by **Vue 3
 ### Prerequisites
 
 - Python 3.12+
-- Node.js 18+
+- Node.js 24+
 
 ### Backend
 
