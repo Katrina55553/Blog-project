@@ -51,6 +51,31 @@ class PostUpdate(BaseModel):
     tags: list[str] | None = None
 
 
+# ── Comment ──
+
+class CommentCreate(BaseModel):
+    content: str
+    post_id: int
+
+
+class CommentResponse(BaseModel):
+    id: int
+    content: str
+    post_id: int
+    user_id: int
+    username: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def extract_username(cls, v):
+        return getattr(v, "username", v)
+
+
+# ── Post responses (after CommentResponse) ──
+
 class PostListResponse(BaseModel):
     id: int
     title: str
@@ -79,6 +104,7 @@ class PostDetailResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     tags: list[str]
+    comments: list[CommentResponse] = []
 
     model_config = {"from_attributes": True}
 
@@ -93,22 +119,5 @@ class PostDetailResponse(BaseModel):
 class TagResponse(BaseModel):
     id: int
     name: str
-
-    model_config = {"from_attributes": True}
-
-
-# ── Comment ──
-
-class CommentCreate(BaseModel):
-    content: str
-    post_id: int
-
-
-class CommentResponse(BaseModel):
-    id: int
-    content: str
-    post_id: int
-    user_id: int
-    created_at: datetime
 
     model_config = {"from_attributes": True}

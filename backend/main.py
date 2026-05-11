@@ -7,7 +7,16 @@ from sqlalchemy.orm import Session
 
 from auth import create_access_token, get_current_user, verify_password
 from crud import create_user, get_user_by_username
-from crud import create_post, get_posts, get_post_by_slug, get_post_by_id, update_post, delete_post
+from crud import (
+    create_post,
+    get_posts,
+    get_post_by_slug,
+    get_post_by_id,
+    update_post,
+    delete_post,
+    get_all_tags,
+    create_comment,
+)
 from database import Base, engine, get_db
 from models import User, Post, Tag, Comment, post_tags  # noqa: F401
 from schemas import (
@@ -19,6 +28,9 @@ from schemas import (
     PostUpdate,
     PostListResponse,
     PostDetailResponse,
+    CommentCreate,
+    CommentResponse,
+    TagResponse,
 )
 
 
@@ -125,6 +137,20 @@ def delete_post_route(post_id: int, current_user: User = Depends(get_current_use
     if post.author_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your post")
     delete_post(db, post)
+
+
+# ── Tag routes ──
+
+@app.get("/api/tags", response_model=list[TagResponse])
+def list_tags(db: Session = Depends(get_db)):
+    return get_all_tags(db)
+
+
+# ── Comment routes ──
+
+@app.post("/api/comments", response_model=CommentResponse, status_code=201)
+def create_comment_route(data: CommentCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return create_comment(db, current_user.id, data.post_id, data.content)
 
 
 if __name__ == "__main__":

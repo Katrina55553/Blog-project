@@ -70,3 +70,7 @@ class Comment(Base):
 
     post = relationship("Post", back_populates="comments")
     author = relationship("User", back_populates="comments")
+
+    @property
+    def username(self):
+        return self.author.username if self.author else ""

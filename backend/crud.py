@@ -93,3 +93,19 @@ def update_post(db: Session, post: Post, data: dict) -> Post:
 def delete_post(db: Session, post: Post) -> None:
     db.delete(post)
     db.commit()
+
+
+# ── Tag ──
+
+def get_all_tags(db: Session) -> list[Tag]:
+    return db.query(Tag).all()
+
+
+# ── Comment ──
+
+def create_comment(db: Session, user_id: int, post_id: int, content: str) -> Comment:
+    comment = Comment(content=content, post_id=post_id, user_id=user_id)
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return comment
