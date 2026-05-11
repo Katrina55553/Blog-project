@@ -1,25 +1,17 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "./stores/auth";
 
 const router = useRouter();
-const username = ref("");
+const auth = useAuthStore();
 
 onMounted(() => {
-  const stored = localStorage.getItem("user");
-  if (stored) {
-    try {
-      username.value = JSON.parse(stored).username;
-    } catch {
-      username.value = "";
-    }
-  }
+  auth.restoreUser();
 });
 
 function logout() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  username.value = "";
+  auth.logout();
   router.push("/");
 }
 </script>
@@ -29,10 +21,10 @@ function logout() {
     <router-link to="/" class="brand">My Blog</router-link>
     <nav>
       <router-link to="/">首页</router-link>
-      <template v-if="username">
+      <template v-if="auth.user">
         <router-link to="/admin">后台</router-link>
         <router-link to="/admin/posts/new">写文章</router-link>
-        <span class="user">{{ username }}</span>
+        <span class="user">{{ auth.user.username }}</span>
         <a href="#" @click.prevent="logout">退出</a>
       </template>
       <template v-else>

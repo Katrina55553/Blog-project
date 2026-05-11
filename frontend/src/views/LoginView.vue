@@ -1,5 +1,110 @@
+<script setup>
+import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuthStore } from "../stores/auth";
+
+const router = useRouter();
+const route = useRoute();
+const auth = useAuthStore();
+
+const username = ref("");
+const password = ref("");
+const error = ref("");
+const loading = ref(false);
+
+async function handleLogin() {
+  error.value = "";
+  if (!username.value || !password.value) {
+    error.value = "请填写用户名和密码";
+    return;
+  }
+  loading.value = true;
+  try {
+    await auth.login(username.value, password.value);
+    const redirect = route.query.redirect || "/";
+    router.push(redirect);
+  } catch (e) {
+    error.value = e.response?.data?.detail || "登录失败";
+  } finally {
+    loading.value = false;
+  }
+}
+</script>
+
 <template>
-  <div class="login">
+  <div class="form-page">
     <h1>登录</h1>
+    <form @submit.prevent="handleLogin">
+      <div v-if="error" class="error">{{ error }}</div>
+      <label>
+        <span>用户名</span>
+        <input v-model="username" type="text" />
+      </label>
+      <label>
+        <span>密码</span>
+        <input v-model="password" type="password" />
+      </label>
+      <button type="submit" :disabled="loading">
+        {{ loading ? "登录中..." : "登录" }}
+      </button>
+    </form>
+    <p class="switch">
+      没有账号？<router-link to="/register">去注册</router-link>
+    </p>
   </div>
 </template>
+
+<style scoped>
+.form-page {
+  max-width: 360px;
+  margin: 4rem auto;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+label span {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+input {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+button {
+  padding: 0.7rem;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.error {
+  color: #d32f2f;
+  background: #fdecea;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+.switch {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+</style>
