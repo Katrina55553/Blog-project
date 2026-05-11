@@ -139,23 +139,23 @@ onMounted(fetchPost);
 
 <style scoped>
 .post-detail { max-width: 700px; margin: 0 auto; }
-.state { text-align: center; padding: 2rem; color: #888; }
-.error { color: #d32f2f; }
-h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+.state { text-align: center; padding: 2rem; color: var(--color-text-muted); }
+.error { color: var(--color-danger); }
+h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--color-text); }
 .meta {
   display: flex;
   gap: 0.6rem;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
   margin-bottom: 1.5rem;
 }
 .tags { display: flex; gap: 0.3rem; }
 .tag {
-  background: #f0f0f0;
+  background: var(--color-tag-bg);
   padding: 0.1rem 0.5rem;
   border-radius: 3px;
   font-size: 0.8rem;
-  color: #555;
+  color: var(--color-tag-text);
 }
 .author-actions {
   margin-bottom: 1.5rem;
@@ -164,41 +164,42 @@ h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
 }
 .author-actions button {
   padding: 0.3rem 0.9rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 3px;
-  background: #fff;
+  background: var(--color-bg);
+  color: var(--color-text);
   cursor: pointer;
   font-size: 0.85rem;
 }
-.btn-edit:hover { border-color: #1976d2; color: #1976d2; }
-.btn-delete { color: #d32f2f; }
-.btn-delete:hover { background: #fdecea; border-color: #d32f2f; }
+.btn-edit:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.btn-delete { color: var(--color-danger); }
+.btn-delete:hover { background: var(--color-danger-bg); border-color: var(--color-danger); }
 
 .content {
   line-height: 1.8;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  color: var(--color-text);
 }
-/* Markdown content styles */
 .content :deep(pre) {
-  background: #1e1e1e;
+  background: var(--color-pre-bg);
   padding: 1rem;
-  border-radius: 6px;
+  border-radius: var(--radius);
   overflow-x: auto;
 }
 .content :deep(code) {
-  font-family: "Fira Code", monospace;
+  font-family: var(--font-mono);
   font-size: 0.9rem;
 }
 .content :deep(p > code) {
-  background: #f5f5f5;
+  background: var(--color-code-bg);
   padding: 0.15rem 0.4rem;
   border-radius: 3px;
 }
 .content :deep(blockquote) {
-  border-left: 3px solid #1976d2;
+  border-left: 3px solid var(--color-primary);
   margin-left: 0;
   padding-left: 1rem;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 .content :deep(img) { max-width: 100%; }
 .content :deep(table) {
@@ -206,22 +207,28 @@ h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
   width: 100%;
 }
 .content :deep(th), .content :deep(td) {
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   padding: 0.5rem;
   text-align: left;
 }
 
-.comments { margin-top: 3rem; border-top: 1px solid #eee; padding-top: 1.5rem; }
-.comments h3 { margin-bottom: 1rem; }
-.login-hint { font-size: 0.9rem; color: #888; }
+.comments {
+  margin-top: 3rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1.5rem;
+}
+.comments h3 { margin-bottom: 1rem; color: var(--color-text); }
+.login-hint { font-size: 0.9rem; color: var(--color-text-muted); }
 .comment-form textarea {
   width: 100%;
   padding: 0.6rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   resize: vertical;
   font-size: 0.95rem;
   box-sizing: border-box;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 .comment-actions {
   display: flex;
@@ -231,17 +238,17 @@ h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
 }
 .comment-actions button {
   padding: 0.5rem 1.2rem;
-  background: #333;
-  color: #fff;
+  background: var(--color-text);
+  color: var(--color-bg);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius);
   cursor: pointer;
 }
 .comment-actions button:disabled { opacity: 0.5; }
 .comment-list { margin-top: 1rem; }
 .comment-item {
   padding: 0.8rem 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border-light);
 }
 .comment-header {
   display: flex;
@@ -249,6 +256,7 @@ h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
   font-size: 0.9rem;
   margin-bottom: 0.3rem;
 }
-.comment-header span { color: #999; font-size: 0.8rem; }
-.comment-item p { margin: 0; font-size: 0.95rem; color: #444; }
+.comment-header strong { color: var(--color-text); }
+.comment-header span { color: var(--color-text-muted); font-size: 0.8rem; }
+.comment-item p { margin: 0; font-size: 0.95rem; color: var(--color-text-secondary); }
 </style>

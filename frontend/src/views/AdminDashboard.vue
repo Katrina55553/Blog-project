@@ -68,16 +68,16 @@ onMounted(fetchPosts);
 
 <style scoped>
 .admin-dashboard { max-width: 700px; margin: 0 auto; }
-h1 { margin-bottom: 1rem; }
-.state { text-align: center; padding: 2rem; color: #888; }
+h1 { margin-bottom: 1rem; color: var(--color-text); }
+.state { text-align: center; padding: 2rem; color: var(--color-text-muted); }
 .btn-new {
   display: inline-block;
   margin-bottom: 1.5rem;
   padding: 0.5rem 1.2rem;
-  background: #333;
-  color: #fff;
+  background: var(--color-text);
+  color: var(--color-bg);
   text-decoration: none;
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-size: 0.95rem;
 }
 .post-table {
@@ -87,28 +87,29 @@ h1 { margin-bottom: 1rem; }
 .post-table th, .post-table td {
   text-align: left;
   padding: 0.7rem 0.5rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border-light);
 }
 .post-table th {
   font-size: 0.85rem;
-  color: #888;
+  color: var(--color-text-muted);
 }
 .post-table a {
-  color: #333;
+  color: var(--color-text);
   text-decoration: none;
 }
-.post-table a:hover { color: #1976d2; }
+.post-table a:hover { color: var(--color-primary); }
 .actions { white-space: nowrap; }
 .actions button {
   padding: 0.25rem 0.7rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 3px;
   cursor: pointer;
   font-size: 0.85rem;
-  background: #fff;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 .btn-edit { margin-right: 0.3rem; }
-.btn-edit:hover { border-color: #1976d2; color: #1976d2; }
-.btn-delete { color: #d32f2f; }
-.btn-delete:hover { background: #fdecea; border-color: #d32f2f; }
+.btn-edit:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.btn-delete { color: var(--color-danger); }
+.btn-delete:hover { background: var(--color-danger-bg); border-color: var(--color-danger); }
 </style>

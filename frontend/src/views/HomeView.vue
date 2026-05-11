@@ -90,23 +90,31 @@ watch(tag, () => {
 
 <style scoped>
 .home { max-width: 700px; margin: 0 auto; }
-h1 { margin-bottom: 1.5rem; }
-.state { text-align: center; padding: 2rem; color: #888; }
-.error { color: #d32f2f; }
+h1 { margin-bottom: 1.5rem; color: var(--color-text); }
+.state { text-align: center; padding: 2rem; color: var(--color-text-muted); }
+.error { color: var(--color-danger); }
 .card {
-  padding: 1.2rem 0;
-  border-bottom: 1px solid #eee;
+  padding: 1.4rem;
+  margin-bottom: 0.8rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  background: var(--color-card-hover);
+  box-shadow: var(--shadow-sm);
 }
 .title {
   font-size: 1.2rem;
   font-weight: 600;
-  color: #222;
+  color: var(--color-text);
   text-decoration: none;
 }
-.title:hover { color: #1976d2; }
+.title:hover { color: var(--color-primary); }
 .summary {
   margin: 0.4rem 0;
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 0.95rem;
 }
 .meta {
@@ -114,19 +122,19 @@ h1 { margin-bottom: 1.5rem; }
   align-items: center;
   gap: 0.8rem;
   font-size: 0.85rem;
-  color: #999;
+  color: var(--color-text-muted);
 }
 .tags { display: flex; gap: 0.3rem; }
 .tag {
-  background: #f0f0f0;
+  background: var(--color-tag-bg);
   border: none;
   padding: 0.15rem 0.5rem;
   border-radius: 3px;
   cursor: pointer;
   font-size: 0.8rem;
-  color: #555;
+  color: var(--color-tag-text);
 }
-.tag.active { background: #1976d2; color: #fff; }
+.tag.active { background: var(--color-primary); color: #fff; }
 .pagination {
   display: flex;
   justify-content: center;
@@ -135,11 +143,12 @@ h1 { margin-bottom: 1.5rem; }
 }
 .pagination button {
   padding: 0.4rem 0.8rem;
-  border: 1px solid #ddd;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
   border-radius: 4px;
   cursor: pointer;
 }
 .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
-.pagination button.current { background: #333; color: #fff; border-color: #333; }
+.pagination button.current { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
 </style>

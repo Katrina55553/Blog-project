@@ -150,24 +150,32 @@ onMounted(() => {
 
 <style scoped>
 .admin-post-edit { max-width: 900px; margin: 0 auto; }
-h1 { margin-bottom: 1.5rem; }
-.state { text-align: center; padding: 2rem; color: #888; }
-.error { color: #d32f2f; background: #fdecea; padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem; }
+h1 { margin-bottom: 1.5rem; color: var(--color-text); }
+.state { text-align: center; padding: 2rem; color: var(--color-text-muted); }
+.error {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
 .editor-form { display: flex; flex-direction: column; gap: 1rem; }
 label span {
   display: block;
   margin-bottom: 0.25rem;
   font-size: 0.9rem;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 input, textarea {
   width: 100%;
   padding: 0.6rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   font-size: 1rem;
   box-sizing: border-box;
   font-family: inherit;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 textarea { resize: vertical; }
 .editor-panes {
@@ -178,28 +186,30 @@ textarea { resize: vertical; }
 .pane { display: flex; flex-direction: column; }
 .pane-label {
   font-size: 0.85rem;
-  color: #888;
+  color: var(--color-text-muted);
   margin-bottom: 0.25rem;
 }
 .pane textarea {
   flex: 1;
-  font-family: "Fira Code", "Consolas", monospace;
+  font-family: var(--font-mono);
   font-size: 0.9rem;
   line-height: 1.6;
 }
 .preview {
   flex: 1;
-  border: 1px solid #eee;
-  border-radius: 4px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
   padding: 0.8rem;
   overflow-y: auto;
   line-height: 1.7;
   font-size: 0.95rem;
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
 }
-.preview :deep(pre) { background: #1e1e1e; padding: 0.8rem; border-radius: 4px; overflow-x: auto; }
+.preview :deep(pre) { background: var(--color-pre-bg); padding: 0.8rem; border-radius: var(--radius); overflow-x: auto; }
 .preview :deep(code) { font-size: 0.85rem; }
-.preview :deep(p > code) { background: #f5f5f5; padding: 0.1rem 0.3rem; border-radius: 3px; }
-.preview :deep(blockquote) { border-left: 3px solid #1976d2; margin-left: 0; padding-left: 0.8rem; color: #666; }
+.preview :deep(p > code) { background: var(--color-code-bg); padding: 0.1rem 0.3rem; border-radius: 3px; }
+.preview :deep(blockquote) { border-left: 3px solid var(--color-primary); margin-left: 0; padding-left: 0.8rem; color: var(--color-text-secondary); }
 
 .form-actions {
   display: flex;
@@ -209,14 +219,14 @@ textarea { resize: vertical; }
 }
 .btn-save {
   padding: 0.6rem 2rem;
-  background: #333;
-  color: #fff;
+  background: var(--color-text);
+  color: var(--color-bg);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-size: 1rem;
   cursor: pointer;
 }
 .btn-save:disabled { opacity: 0.5; }
-.btn-cancel { color: #888; text-decoration: none; font-size: 0.95rem; }
-.btn-cancel:hover { color: #333; }
+.btn-cancel { color: var(--color-text-muted); text-decoration: none; font-size: 0.95rem; }
+.btn-cancel:hover { color: var(--color-text); }
 </style>

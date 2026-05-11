@@ -62,6 +62,7 @@ async function handleLogin() {
 h1 {
   text-align: center;
   margin-bottom: 1.5rem;
+  color: var(--color-text);
 }
 form {
   display: flex;
@@ -72,22 +73,24 @@ label span {
   display: block;
   margin-bottom: 0.25rem;
   font-size: 0.9rem;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 input {
   width: 100%;
   padding: 0.6rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   font-size: 1rem;
   box-sizing: border-box;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 button {
   padding: 0.7rem;
-  background: #333;
-  color: #fff;
+  background: var(--color-text);
+  color: var(--color-bg);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-size: 1rem;
   cursor: pointer;
 }
@@ -96,15 +99,16 @@ button:disabled {
   cursor: not-allowed;
 }
 .error {
-  color: #d32f2f;
-  background: #fdecea;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
   padding: 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-size: 0.9rem;
 }
 .switch {
   text-align: center;
   margin-top: 1rem;
   font-size: 0.9rem;
+  color: var(--color-text-secondary);
 }
 </style>
