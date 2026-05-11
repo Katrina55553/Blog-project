@@ -1,14 +1,15 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { marked } from "marked";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
-import { getPostBySlug } from "../api/post";
+import { getPostBySlug, deletePost } from "../api/post";
 import { createComment } from "../api/comment";
 import { useAuthStore } from "../stores/auth";
 
 const route = useRoute();
+const router = useRouter();
 const auth = useAuthStore();
 
 const post = ref(null);
@@ -18,6 +19,10 @@ const error = ref("");
 const commentText = ref("");
 const commentLoading = ref(false);
 const commentError = ref("");
+
+const isAuthor = computed(() =>
+  auth.user && post.value && auth.user.id === post.value.author_id,
+);
 
 marked.setOptions({
   highlight(code, lang) {
@@ -32,6 +37,20 @@ const renderedContent = computed(() => {
   if (!post.value?.content) return "";
   return marked(post.value.content);
 });
+
+function handleEdit() {
+  router.push(`/admin/posts/${post.value.id}/edit`);
+}
+
+async function handleDelete() {
+  if (!confirm("确定删除这篇文章？")) return;
+  try {
+    await deletePost(post.value.id);
+    router.push("/");
+  } catch {
+    alert("删除失败");
+  }
+}
 
 async function fetchPost() {
   loading.value = true;
@@ -76,6 +95,10 @@ onMounted(fetchPost);
         <span v-if="post.tags?.length" class="tags">
           <span v-for="t in post.tags" :key="t" class="tag">{{ t }}</span>
         </span>
+      </div>
+      <div v-if="isAuthor" class="author-actions">
+        <button class="btn-edit" @click="handleEdit">编辑</button>
+        <button class="btn-delete" @click="handleDelete">删除</button>
       </div>
       <div class="content" v-html="renderedContent"></div>
 
@@ -134,6 +157,23 @@ h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
   font-size: 0.8rem;
   color: #555;
 }
+.author-actions {
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.author-actions button {
+  padding: 0.3rem 0.9rem;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.btn-edit:hover { border-color: #1976d2; color: #1976d2; }
+.btn-delete { color: #d32f2f; }
+.btn-delete:hover { background: #fdecea; border-color: #d32f2f; }
+
 .content {
   line-height: 1.8;
   font-size: 1rem;

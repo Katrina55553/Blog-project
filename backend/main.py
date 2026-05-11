@@ -119,6 +119,14 @@ def create_post_route(data: PostCreate, current_user: User = Depends(get_current
     return create_post(db, current_user.id, data.title, data.slug, data.content, data.summary, data.tags)
 
 
+@app.get("/api/admin/posts/{post_id}", response_model=PostDetailResponse)
+def get_post_route(post_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    post = get_post_by_id(db, post_id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    return post
+
+
 @app.put("/api/admin/posts/{post_id}", response_model=PostDetailResponse)
 def update_post_route(post_id: int, data: PostUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     post = get_post_by_id(db, post_id)

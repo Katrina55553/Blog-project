@@ -8,6 +8,10 @@ export function getPostBySlug(slug) {
   return client.get(`/posts/${slug}`);
 }
 
+export function getPostById(id) {
+  return client.get(`/admin/posts/${id}`);
+}
+
 export function createPost(data) {
   return client.post("/admin/posts", data);
 }
