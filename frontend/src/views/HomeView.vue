@@ -51,8 +51,17 @@ watch(tag, () => {
   <div class="home">
     <h1>文章列表</h1>
 
-    <div v-if="loading" class="state">加载中...</div>
-    <div v-else-if="error" class="state error">{{ error }}</div>
+    <div v-if="loading" class="skeleton-list">
+      <div v-for="n in 3" :key="n" class="skeleton-card">
+        <div class="skeleton-line w-60"></div>
+        <div class="skeleton-line w-90"></div>
+        <div class="skeleton-line w-40"></div>
+      </div>
+    </div>
+    <div v-else-if="error" class="state error">
+      <p>{{ error }}</p>
+      <button class="btn-retry" @click="fetchPosts">重试</button>
+    </div>
     <div v-else-if="posts.length === 0" class="state">暂无文章</div>
 
     <div v-else class="posts">
@@ -93,6 +102,43 @@ watch(tag, () => {
 h1 { margin-bottom: 1.5rem; color: var(--color-text); }
 .state { text-align: center; padding: 2rem; color: var(--color-text-muted); }
 .error { color: var(--color-danger); }
+.btn-retry {
+  margin-top: 0.5rem;
+  padding: 0.4rem 1.2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.btn-retry:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* Skeleton */
+.skeleton-list { display: flex; flex-direction: column; gap: 0.8rem; }
+.skeleton-card {
+  padding: 1.4rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.skeleton-line {
+  height: 14px;
+  background: var(--color-border);
+  border-radius: 4px;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-line.w-60 { width: 60%; }
+.skeleton-line.w-90 { width: 90%; }
+.skeleton-line.w-40 { width: 40%; }
+@keyframes shimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
+}
 .card {
   padding: 1.4rem;
   margin-bottom: 0.8rem;

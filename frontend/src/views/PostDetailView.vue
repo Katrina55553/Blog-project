@@ -85,8 +85,17 @@ onMounted(fetchPost);
 
 <template>
   <div class="post-detail">
-    <div v-if="loading" class="state">加载中...</div>
-    <div v-else-if="error" class="state error">{{ error }}</div>
+    <div v-if="loading" class="skeleton-detail">
+      <div class="skeleton-line w-70 h-32"></div>
+      <div class="skeleton-line w-40 h-14"></div>
+      <div class="skeleton-line w-100 h-14"></div>
+      <div class="skeleton-line w-100 h-14"></div>
+      <div class="skeleton-line w-80 h-14"></div>
+    </div>
+    <div v-else-if="error" class="state error">
+      <p>{{ error }}</p>
+      <button class="btn-retry" @click="fetchPost">重试</button>
+    </div>
 
     <article v-else>
       <h1>{{ post.title }}</h1>
@@ -141,6 +150,40 @@ onMounted(fetchPost);
 .post-detail { max-width: 700px; margin: 0 auto; }
 .state { text-align: center; padding: 2rem; color: var(--color-text-muted); }
 .error { color: var(--color-danger); }
+.btn-retry {
+  margin-top: 0.5rem;
+  padding: 0.4rem 1.2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.btn-retry:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* Skeleton */
+.skeleton-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.skeleton-line {
+  background: var(--color-border);
+  border-radius: 4px;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-line.w-70 { width: 70%; }
+.skeleton-line.w-40 { width: 40%; }
+.skeleton-line.w-80 { width: 80%; }
+.skeleton-line.w-100 { width: 100%; }
+.skeleton-line.h-32 { height: 32px; }
+.skeleton-line.h-14 { height: 14px; }
+@keyframes shimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
+}
 h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--color-text); }
 .meta {
   display: flex;
