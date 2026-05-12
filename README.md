@@ -1,6 +1,7 @@
 # Blog Project / 博客项目
 
 A minimalist, high-performance personal technical blog system powered by **Vue 3** + **FastAPI**.
+
 基于 **Vue 3** + **FastAPI** 的极简高性能个人技术博客系统。
 
 ## Tech Stack / 技术栈
