@@ -149,7 +149,7 @@ def list_posts(page: int = 1, size: int = 10, tag: str = "", db: Session = Depen
             "title": p.title,
             "slug": p.slug,
             "summary": p.summary,
-            "author_id": p.author_id,
+            "author": {"id": p.author.id, "username": p.author.username, "avatar": p.author.avatar} if p.author else None,
             "created_at": p.created_at,
             "tags": [t.name for t in p.tags],
         })
@@ -187,7 +187,7 @@ def list_my_posts(page: int = 1, size: int = 20, current_user: User = Depends(ge
             "title": p.title,
             "slug": p.slug,
             "summary": p.summary,
-            "author_id": p.author_id,
+            "author": {"id": p.author.id, "username": p.author.username, "avatar": p.author.avatar} if p.author else None,
             "status": p.status,
             "created_at": p.created_at,
             "updated_at": p.updated_at,

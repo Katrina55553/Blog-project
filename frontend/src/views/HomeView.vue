@@ -71,6 +71,7 @@ watch(tag, () => {
         </router-link>
         <p class="summary">{{ post.summary }}</p>
         <div class="meta">
+          <span class="author">{{ post.author?.username }}</span>
           <span class="date">{{ new Date(post.created_at).toLocaleDateString() }}</span>
           <span v-if="post.tags?.length" class="tags">
             <button

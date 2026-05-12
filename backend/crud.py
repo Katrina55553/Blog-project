@@ -53,7 +53,7 @@ def create_post(db: Session, author_id: int, title: str, slug: str,
 
 
 def get_posts(db: Session, page: int = 1, size: int = 10, tag: str = ""):
-    query = db.query(Post).options(joinedload(Post.tags))
+    query = db.query(Post).options(joinedload(Post.author), joinedload(Post.tags))
     if tag:
         query = query.join(Post.tags).filter(Tag.name == tag)
     total = query.count()
@@ -69,18 +69,18 @@ def get_posts(db: Session, page: int = 1, size: int = 10, tag: str = ""):
 def get_post_by_slug(db: Session, slug: str) -> Post | None:
     return (
         db.query(Post)
-        .options(joinedload(Post.tags), joinedload(Post.comments).joinedload(Comment.author))
+        .options(joinedload(Post.author), joinedload(Post.tags), joinedload(Post.comments).joinedload(Comment.author))
         .filter_by(slug=slug)
         .first()
     )
 
 
 def get_post_by_id(db: Session, post_id: int) -> Post | None:
-    return db.query(Post).options(joinedload(Post.tags)).filter_by(id=post_id).first()
+    return db.query(Post).options(joinedload(Post.author), joinedload(Post.tags)).filter_by(id=post_id).first()
 
 
 def get_posts_by_user(db: Session, user_id: int, page: int = 1, size: int = 10):
-    query = db.query(Post).options(joinedload(Post.tags)).filter_by(author_id=user_id)
+    query = db.query(Post).options(joinedload(Post.author), joinedload(Post.tags)).filter_by(author_id=user_id)
     total = query.count()
     posts = (
         query.order_by(Post.created_at.desc())

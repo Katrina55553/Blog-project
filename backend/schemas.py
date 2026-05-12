@@ -77,12 +77,20 @@ class CommentResponse(BaseModel):
 
 # ── Post responses (after CommentResponse) ──
 
+class AuthorInfo(BaseModel):
+    id: int
+    username: str
+    avatar: str
+
+    model_config = {"from_attributes": True}
+
+
 class PostListResponse(BaseModel):
     id: int
     title: str
     slug: str
     summary: str
-    author_id: int
+    author: AuthorInfo
     created_at: datetime
     tags: list[str]
 
@@ -100,7 +108,7 @@ class PostDetailResponse(BaseModel):
     slug: str
     content: str
     summary: str
-    author_id: int
+    author: AuthorInfo
     status: str
     created_at: datetime
     updated_at: datetime

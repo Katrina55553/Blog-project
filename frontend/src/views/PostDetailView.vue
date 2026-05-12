@@ -100,6 +100,7 @@ onMounted(fetchPost);
     <article v-else>
       <h1>{{ post.title }}</h1>
       <div class="meta">
+        <span class="author">{{ post.author?.username }}</span>
         <span>{{ new Date(post.created_at).toLocaleDateString() }}</span>
         <span v-if="post.tags?.length" class="tags">
           <span v-for="t in post.tags" :key="t" class="tag">{{ t }}</span>
