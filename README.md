@@ -57,9 +57,10 @@ Creates test user `admin / admin123` with a sample post.
 
 | Method | Path               | Description              |
 | ------ | ------------------ | ------------------------ |
-| GET    | `/api/posts`       | Paginated article list   |
-| GET    | `/api/posts/{slug}`| Article detail + comments|
+| GET    | `/api/posts`       | Paginated article list (?page=&size=&tag=&q=) |
+| GET    | `/api/posts/{slug}`| Article detail + comments + likes |
 | GET    | `/api/tags`        | All tags                 |
+| GET    | `/api/users/{username}` | User profile + their posts |
 | POST   | `/api/auth/register`| Register                |
 | POST   | `/api/auth/login`  | Login (returns JWT)      |
 
@@ -67,11 +68,16 @@ Creates test user `admin / admin123` with a sample post.
 
 | Method | Path                     | Description       |
 | ------ | ------------------------ | ----------------- |
-| POST   | `/api/admin/posts`       | Create article    |
-| PUT    | `/api/admin/posts/{id}`  | Update article    |
-| DELETE | `/api/admin/posts/{id}`  | Delete article    |
 | GET    | `/api/auth/me`           | Current user info |
+| PUT    | `/api/auth/me`           | Update profile (avatar, bio, github) |
+| GET    | `/api/admin/posts`       | My articles (paginated) |
+| POST   | `/api/admin/posts`       | Create article    |
+| GET    | `/api/admin/posts/{id}`  | Get article for editing |
+| PUT    | `/api/admin/posts/{id}`  | Update article (author or admin) |
+| DELETE | `/api/admin/posts/{id}`  | Delete article (author or admin) |
 | POST   | `/api/comments`          | Post a comment    |
+| POST   | `/api/likes/{post_id}`   | Like a post       |
+| DELETE | `/api/likes/{post_id}`   | Unlike a post     |
 
 ## Project Structure
 
@@ -87,18 +93,43 @@ blog-project/
 │   └── seed.py          # Test data seeder
 └── frontend/
     └── src/
-        ├── views/        # Page components
-        ├── components/   # Reusable UI
-        ├── router/       # Vue Router config
-        ├── stores/       # Pinia stores
-        └── api/          # Axios client & API functions
+        ├── App.vue           # Navbar, theme toggle, search
+        ├── style.css         # Global CSS variables & themes
+        ├── router/index.js   # Vue Router config
+        ├── stores/auth.js    # Pinia auth store
+        ├── api/              # Axios client & API modules
+        │   ├── client.js     # Axios instance, auth interceptor
+        │   ├── auth.js       # Login, register, profile
+        │   ├── post.js       # Post CRUD
+        │   ├── comment.js    # Comment creation
+        │   ├── like.js       # Like/unlike
+        │   └── user.js       # User profile
+        └── views/            # Page components
+            ├── HomeView.vue         # Article list, search, tag filter
+            ├── PostDetailView.vue   # Article detail, comments, likes
+            ├── LoginView.vue        # Login form
+            ├── RegisterView.vue     # Registration form
+            ├── AdminDashboard.vue   # My articles management
+            ├── AdminPostEdit.vue    # Markdown editor (new/edit)
+            ├── UserProfile.vue      # User profile & their posts
+            ├── ProfileEdit.vue      # Edit own profile
+            └── NotFoundView.vue     # 404 page
 ```
 
 ## Features
 
-- Article CRUD with Markdown support
+- Article CRUD with Markdown rendering (highlight.js)
 - Tag-based filtering
+- Full-text search (title + content)
 - Comment system
-- JWT authentication
-- Responsive layout
-- Dark mode
+- Like/unlike posts
+- User profiles with avatar, bio, GitHub link
+- Profile editing
+- Admin dashboard (personal article management)
+- Admin permission control (admins can manage all posts)
+- JWT authentication (24h expiry, bcrypt)
+- Responsive layout with hamburger menu
+- Dark mode (auto-detects system preference)
+- Skeleton loading states
+- Rate limiting on auth and write endpoints
+- HTML sanitization (bleach whitelist)
