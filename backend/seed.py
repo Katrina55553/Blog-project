@@ -1,14 +1,15 @@
-from database import SessionLocal
+from database import Base, SessionLocal, engine
 from models import Post, Tag, User
 from auth import hash_password
 
 
 def seed():
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 
     admin = db.query(User).filter_by(username="admin").first()
     if not admin:
-        admin = User(username="admin", password_hash=hash_password("admin123"))
+        admin = User(username="admin", password_hash=hash_password("admin123"), is_admin=True)
         db.add(admin)
         db.flush()
 

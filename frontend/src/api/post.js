@@ -4,6 +4,10 @@ export function getPosts(page = 1, size = 10, tag = "") {
   return client.get("/posts", { params: { page, size, tag } });
 }
 
+export function getMyPosts(page = 1, size = 20) {
+  return client.get("/admin/posts", { params: { page, size } });
+}
+
 export function getPostBySlug(slug) {
   return client.get(`/posts/${slug}`);
 }

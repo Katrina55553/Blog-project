@@ -28,6 +28,7 @@ class UserResponse(BaseModel):
     avatar: str
     bio: str
     github_url: str
+    is_admin: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}

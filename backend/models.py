@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -22,6 +22,7 @@ class User(Base):
     avatar = Column(String, default="")
     bio = Column(String, default="")
     github_url = Column(String, default="")
+    is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     posts = relationship("Post", back_populates="author")

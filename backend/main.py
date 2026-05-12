@@ -19,6 +19,7 @@ from crud import (
     get_posts,
     get_post_by_slug,
     get_post_by_id,
+    get_posts_by_user,
     update_post,
     delete_post,
     get_all_tags,
@@ -171,6 +172,36 @@ def detail_post(slug: str, db: Session = Depends(get_db)):
 
 # ── Admin post routes ──
 
+def _author_or_admin(post: Post, user: User):
+    if post.author_id != user.id and not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your post")
+
+
+@app.get("/api/admin/posts")
+def list_my_posts(page: int = 1, size: int = 20, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    posts, total = get_posts_by_user(db, current_user.id, page=page, size=size)
+    items = []
+    for p in posts:
+        items.append({
+            "id": p.id,
+            "title": p.title,
+            "slug": p.slug,
+            "summary": p.summary,
+            "author_id": p.author_id,
+            "status": p.status,
+            "created_at": p.created_at,
+            "updated_at": p.updated_at,
+            "tags": [t.name for t in p.tags],
+        })
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "size": size,
+        "pages": (total + size - 1) // size if total > 0 else 0,
+    }
+
+
 @app.post("/api/admin/posts", response_model=PostDetailResponse, status_code=201)
 @limiter.limit("10/minute")
 def create_post_route(request: Request, data: PostCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -189,6 +220,7 @@ def get_post_route(post_id: int, current_user: User = Depends(get_current_user),
     post = get_post_by_id(db, post_id)
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    _author_or_admin(post, current_user)
     return post
 
 
@@ -198,8 +230,7 @@ def update_post_route(request: Request, post_id: int, data: PostUpdate, current_
     post = get_post_by_id(db, post_id)
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
-    if post.author_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your post")
+    _author_or_admin(post, current_user)
     payload = data.model_dump(exclude_unset=True)
     if payload.get("title"):
         payload["title"] = sanitize(payload["title"])
@@ -218,8 +249,7 @@ def delete_post_route(request: Request, post_id: int, current_user: User = Depen
     post = get_post_by_id(db, post_id)
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
-    if post.author_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your post")
+    _author_or_admin(post, current_user)
     delete_post(db, post)
 
 

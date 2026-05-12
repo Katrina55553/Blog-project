@@ -1,17 +1,21 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { getPosts, deletePost } from "../api/post";
+import { getMyPosts, deletePost } from "../api/post";
 
 const router = useRouter();
 const posts = ref([]);
 const loading = ref(true);
+const error = ref("");
 
 async function fetchPosts() {
   loading.value = true;
+  error.value = "";
   try {
-    const res = await getPosts(1, 100);
+    const res = await getMyPosts(1, 100);
     posts.value = res.data.items;
+  } catch {
+    error.value = "加载失败";
   } finally {
     loading.value = false;
   }
@@ -40,6 +44,10 @@ onMounted(fetchPosts);
     <router-link to="/admin/posts/new" class="btn-new">+ 写新文章</router-link>
 
     <div v-if="loading" class="state">加载中...</div>
+    <div v-else-if="error" class="state">
+      <p>{{ error }}</p>
+      <button class="btn-retry" @click="fetchPosts">重试</button>
+    </div>
     <div v-else-if="posts.length === 0" class="state">还没有文章</div>
 
     <table v-else class="post-table">
@@ -112,4 +120,13 @@ h1 { margin-bottom: 1rem; color: var(--color-text); }
 .btn-edit:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .btn-delete { color: var(--color-danger); }
 .btn-delete:hover { background: var(--color-danger-bg); border-color: var(--color-danger); }
+.btn-retry {
+  margin-top: 0.5rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+}
 </style>

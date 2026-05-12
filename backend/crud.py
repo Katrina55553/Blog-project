@@ -79,6 +79,18 @@ def get_post_by_id(db: Session, post_id: int) -> Post | None:
     return db.query(Post).options(joinedload(Post.tags)).filter_by(id=post_id).first()
 
 
+def get_posts_by_user(db: Session, user_id: int, page: int = 1, size: int = 10):
+    query = db.query(Post).options(joinedload(Post.tags)).filter_by(author_id=user_id)
+    total = query.count()
+    posts = (
+        query.order_by(Post.created_at.desc())
+        .offset((page - 1) * size)
+        .limit(size)
+        .all()
+    )
+    return posts, total
+
+
 def update_post(db: Session, post: Post, data: dict) -> Post:
     for field in ("title", "slug", "content", "summary"):
         if data.get(field) is not None:
