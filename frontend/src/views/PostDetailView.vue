@@ -6,6 +6,7 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { getPostBySlug, deletePost } from "../api/post";
 import { createComment } from "../api/comment";
+import { likePost, unlikePost } from "../api/like";
 import { useAuthStore } from "../stores/auth";
 
 const route = useRoute();
@@ -19,6 +20,35 @@ const error = ref("");
 const commentText = ref("");
 const commentLoading = ref(false);
 const commentError = ref("");
+
+const likeLoading = ref(false);
+
+function isLiked() {
+  return post.value?.is_liked || false;
+}
+
+async function handleLike() {
+  if (!auth.user) {
+    router.push("/login");
+    return;
+  }
+  likeLoading.value = true;
+  try {
+    if (isLiked()) {
+      const res = await unlikePost(post.value.id);
+      post.value.likes_count = res.data.likes_count;
+      post.value.is_liked = false;
+    } else {
+      const res = await likePost(post.value.id);
+      post.value.likes_count = res.data.likes_count;
+      post.value.is_liked = true;
+    }
+  } catch {
+    // ignore duplicate like/unlike
+  } finally {
+    likeLoading.value = false;
+  }
+}
 
 marked.setOptions({
   highlight(code, lang) {
@@ -103,6 +133,14 @@ onMounted(fetchPost);
       <div class="meta">
         <router-link :to="`/user/${post.author?.username}`" class="author">{{ post.author?.username }}</router-link>
         <span>{{ new Date(post.created_at).toLocaleDateString() }}</span>
+        <button
+          class="like-btn"
+          :class="{ liked: isLiked() }"
+          :disabled="likeLoading"
+          @click="handleLike"
+        >
+          {{ isLiked() ? '❤️' : '🤍' }} {{ post.likes_count || 0 }}
+        </button>
         <span v-if="post.tags?.length" class="tags">
           <span v-for="t in post.tags" :key="t" class="tag">{{ t }}</span>
         </span>
@@ -196,6 +234,18 @@ h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--color-text); }
 }
 .author { color: var(--color-text-muted); text-decoration: none; }
 .author:hover { color: var(--color-primary); }
+.like-btn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+.like-btn:hover { border-color: var(--color-danger); }
+.like-btn.liked { border-color: var(--color-danger); }
+.like-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .tags { display: flex; gap: 0.3rem; }
 .tag {
   background: var(--color-tag-bg);

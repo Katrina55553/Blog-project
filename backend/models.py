@@ -75,3 +75,15 @@ class Comment(Base):
     @property
     def username(self):
         return self.author.username if self.author else ""
+
+
+likes = Table(
+    "likes",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("post_id", Integer, ForeignKey("posts.id"), primary_key=True),
+)
+
+# Add likes_count to Post via property
+Post.likes_count = property(lambda self: len(self.likes) if hasattr(self, "likes") else 0)
+Post.likes = relationship("User", secondary=likes)

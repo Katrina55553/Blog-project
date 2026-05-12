@@ -27,6 +27,8 @@ from crud import (
     delete_post,
     get_all_tags,
     create_comment,
+    like_post,
+    unlike_post,
 )
 from database import Base, engine, get_db
 from models import User, Post, Tag, Comment, post_tags  # noqa: F401
@@ -281,6 +283,24 @@ def get_user(username: str, db: Session = Depends(get_db)):
 @app.get("/api/tags", response_model=list[TagResponse])
 def list_tags(db: Session = Depends(get_db)):
     return get_all_tags(db)
+
+
+# ── Like routes ──
+
+@app.post("/api/likes/{post_id}")
+def like_route(post_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    post = get_post_by_id(db, post_id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    return like_post(db, current_user.id, post_id)
+
+
+@app.delete("/api/likes/{post_id}")
+def unlike_route(post_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    post = get_post_by_id(db, post_id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    return unlike_post(db, current_user.id, post_id)
 
 
 # ── Comment routes ──

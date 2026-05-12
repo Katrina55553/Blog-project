@@ -2,7 +2,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from auth import hash_password
-from models import Comment, Post, Tag, User
+from models import Comment, Post, Tag, User, likes
 
 
 # ── User ──
@@ -77,7 +77,7 @@ def get_posts(db: Session, page: int = 1, size: int = 10, tag: str = "", q: str 
 def get_post_by_slug(db: Session, slug: str) -> Post | None:
     return (
         db.query(Post)
-        .options(joinedload(Post.author), joinedload(Post.tags), joinedload(Post.comments).joinedload(Comment.author))
+        .options(joinedload(Post.author), joinedload(Post.tags), joinedload(Post.comments).joinedload(Comment.author), joinedload(Post.likes))
         .filter_by(slug=slug)
         .first()
     )
@@ -133,6 +133,22 @@ def get_user_profile(db: Session, username: str) -> dict | None:
         .all()
     )
     return {"user": user, "posts": posts}
+
+
+# ── Like ──
+
+def like_post(db: Session, user_id: int, post_id: int) -> dict:
+    db.execute(likes.insert().values(user_id=user_id, post_id=post_id))
+    db.commit()
+    count = db.query(likes).filter_by(post_id=post_id).count()
+    return {"liked": True, "likes_count": count}
+
+
+def unlike_post(db: Session, user_id: int, post_id: int) -> dict:
+    db.execute(likes.delete().where(likes.c.user_id == user_id, likes.c.post_id == post_id))
+    db.commit()
+    count = db.query(likes).filter_by(post_id=post_id).count()
+    return {"liked": False, "likes_count": count}
 
 
 # ── Comment ──

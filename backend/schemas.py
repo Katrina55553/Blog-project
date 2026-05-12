@@ -119,6 +119,8 @@ class PostDetailResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     tags: list[str]
+    likes_count: int = 0
+    is_liked: bool = False
     comments: list[CommentResponse] = []
 
     model_config = {"from_attributes": True}
