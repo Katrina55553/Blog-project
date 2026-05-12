@@ -86,10 +86,6 @@ onBeforeUnmount(() => {
         <router-link to="/register" @click="closeMenu">注册</router-link>
       </template>
 
-      <button class="theme-toggle" @click="toggleTheme" :aria-label="isDark ? '切换亮色' : '切换暗色'">
-        {{ isDark ? '🌙' : '☀️' }}
-      </button>
-
       <!-- User avatar + dropdown -->
       <div v-if="auth.user" ref="userMenuRef" class="user-menu">
         <button class="avatar-btn" @click="userMenuOpen = !userMenuOpen" :aria-label="'用户菜单'">
@@ -97,10 +93,14 @@ onBeforeUnmount(() => {
           <span v-else class="avatar-text">{{ userInitial() }}</span>
         </button>
         <div v-if="userMenuOpen" class="dropdown">
-          <button class="dropdown-item" @click="goProfile">编辑资料</button>
+          <button class="dropdown-item" @click="goProfile">编辑信息</button>
           <button class="dropdown-item logout" @click="logout">退出账号</button>
         </div>
       </div>
+
+      <button class="theme-toggle" @click="toggleTheme" :aria-label="isDark ? '切换亮色' : '切换暗色'">
+        {{ isDark ? '🌙' : '☀️' }}
+      </button>
     </nav>
   </header>
   <main class="container">
