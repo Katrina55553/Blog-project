@@ -40,6 +40,11 @@ class UserUpdate(BaseModel):
     github_url: str | None = None
 
 
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str
+
+
 # ── Post ──
 
 class PostCreate(BaseModel):

@@ -15,3 +15,7 @@ export function getMe() {
 export function updateMe(data) {
   return client.put("/auth/me", data);
 }
+
+export function changePassword(oldPassword, newPassword) {
+  return client.put("/auth/password", { old_password: oldPassword, new_password: newPassword });
+}

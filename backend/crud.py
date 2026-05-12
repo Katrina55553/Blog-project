@@ -28,6 +28,11 @@ def update_user(db: Session, user: User, data: dict) -> User:
     return user
 
 
+def change_password(db: Session, user: User, new_password: str) -> None:
+    user.password_hash = hash_password(new_password)
+    db.commit()
+
+
 # ── Post ──
 
 def _get_or_create_tags(db: Session, tag_names: list[str]) -> list[Tag]:

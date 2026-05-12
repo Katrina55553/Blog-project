@@ -2,7 +2,7 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
-import { updateMe } from "../api/auth";
+import { updateMe, changePassword } from "../api/auth";
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -13,6 +13,12 @@ const githubUrl = ref("");
 const saving = ref(false);
 const error = ref("");
 const success = ref(false);
+
+const oldPassword = ref("");
+const newPassword = ref("");
+const pwSaving = ref(false);
+const pwError = ref("");
+const pwSuccess = ref(false);
 
 onMounted(() => {
   if (auth.user) {
@@ -39,6 +45,26 @@ async function handleSave() {
     error.value = e.response?.data?.detail || "保存失败";
   } finally {
     saving.value = false;
+  }
+}
+
+async function handleChangePassword() {
+  pwError.value = "";
+  pwSuccess.value = false;
+  if (!oldPassword.value || !newPassword.value) {
+    pwError.value = "请填写旧密码和新密码";
+    return;
+  }
+  pwSaving.value = true;
+  try {
+    await changePassword(oldPassword.value, newPassword.value);
+    pwSuccess.value = true;
+    oldPassword.value = "";
+    newPassword.value = "";
+  } catch (e) {
+    pwError.value = e.response?.data?.detail || "修改失败";
+  } finally {
+    pwSaving.value = false;
   }
 }
 </script>
@@ -71,6 +97,28 @@ async function handleSave() {
           {{ saving ? "保存中..." : "保存" }}
         </button>
         <router-link to="/" class="btn-cancel">取消</router-link>
+      </div>
+    </form>
+
+    <hr class="divider" />
+
+    <h2>修改密码</h2>
+    <form @submit.prevent="handleChangePassword" class="edit-form">
+      <div v-if="pwSuccess" class="success">密码已更新</div>
+      <div v-if="pwError" class="error">{{ pwError }}</div>
+
+      <label>
+        <span>旧密码</span>
+        <input v-model="oldPassword" type="password" autocomplete="current-password" />
+      </label>
+      <label>
+        <span>新密码</span>
+        <input v-model="newPassword" type="password" autocomplete="new-password" />
+      </label>
+      <div class="form-actions">
+        <button type="submit" :disabled="pwSaving" class="btn-save">
+          {{ pwSaving ? "修改中..." : "修改密码" }}
+        </button>
       </div>
     </form>
   </div>
@@ -130,4 +178,11 @@ textarea { resize: vertical; }
 .btn-save:disabled { opacity: 0.5; }
 .btn-cancel { color: var(--color-text-muted); text-decoration: none; font-size: 0.95rem; }
 .btn-cancel:hover { color: var(--color-text); }
+
+.divider {
+  margin: 2.5rem 0 1.5rem;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+h2 { color: var(--color-text); font-size: 1.2rem; margin-bottom: 1rem; }
 </style>

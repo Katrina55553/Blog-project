@@ -13,9 +13,10 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy.orm import Session
 
-from auth import create_access_token, get_current_user, verify_password
+from auth import create_access_token, get_current_user, hash_password, verify_password
 from crud import create_user, get_user_by_username
 from crud import (
+    change_password,
     create_post,
     get_posts,
     get_post_by_slug,
@@ -38,6 +39,7 @@ from schemas import (
     UserRegister,
     UserResponse,
     UserUpdate,
+    PasswordChange,
     PostCreate,
     PostUpdate,
     PostDetailResponse,
@@ -147,6 +149,14 @@ def me(current_user: User = Depends(get_current_user)):
 @app.put("/api/auth/me", response_model=UserResponse)
 def update_me(data: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return update_user(db, current_user, data.model_dump(exclude_unset=True))
+
+
+@app.put("/api/auth/password")
+def update_password(data: PasswordChange, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(data.old_password, current_user.password_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="原密码错误")
+    change_password(db, current_user, data.new_password)
+    return {"message": "密码已更新"}
 
 
 # ── Public post routes ──
