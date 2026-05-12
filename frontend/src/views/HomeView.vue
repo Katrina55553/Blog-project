@@ -71,7 +71,7 @@ watch(tag, () => {
         </router-link>
         <p class="summary">{{ post.summary }}</p>
         <div class="meta">
-          <span class="author">{{ post.author?.username }}</span>
+          <router-link :to="`/user/${post.author?.username}`" class="author">{{ post.author?.username }}</router-link>
           <span class="date">{{ new Date(post.created_at).toLocaleDateString() }}</span>
           <span v-if="post.tags?.length" class="tags">
             <button
@@ -171,6 +171,8 @@ h1 { margin-bottom: 1.5rem; color: var(--color-text); }
   font-size: 0.85rem;
   color: var(--color-text-muted);
 }
+.author { color: var(--color-text-muted); text-decoration: none; }
+.author:hover { color: var(--color-primary); }
 .tags { display: flex; gap: 0.3rem; }
 .tag {
   background: var(--color-tag-bg);

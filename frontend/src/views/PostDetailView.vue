@@ -100,7 +100,7 @@ onMounted(fetchPost);
     <article v-else>
       <h1>{{ post.title }}</h1>
       <div class="meta">
-        <span class="author">{{ post.author?.username }}</span>
+        <router-link :to="`/user/${post.author?.username}`" class="author">{{ post.author?.username }}</router-link>
         <span>{{ new Date(post.created_at).toLocaleDateString() }}</span>
         <span v-if="post.tags?.length" class="tags">
           <span v-for="t in post.tags" :key="t" class="tag">{{ t }}</span>
@@ -135,7 +135,7 @@ onMounted(fetchPost);
         <div v-if="post.comments?.length" class="comment-list">
           <div v-for="c in post.comments" :key="c.id" class="comment-item">
             <div class="comment-header">
-              <strong>{{ c.username }}</strong>
+              <router-link :to="`/user/${c.username}`" class="comment-author">{{ c.username }}</router-link>
               <span>{{ new Date(c.created_at).toLocaleDateString() }}</span>
             </div>
             <p>{{ c.content }}</p>
@@ -193,6 +193,8 @@ h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--color-text); }
   font-size: 0.9rem;
   margin-bottom: 1.5rem;
 }
+.author { color: var(--color-text-muted); text-decoration: none; }
+.author:hover { color: var(--color-primary); }
 .tags { display: flex; gap: 0.3rem; }
 .tag {
   background: var(--color-tag-bg);
@@ -300,7 +302,8 @@ h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--color-text); }
   font-size: 0.9rem;
   margin-bottom: 0.3rem;
 }
-.comment-header strong { color: var(--color-text); }
+.comment-author { color: var(--color-text); text-decoration: none; font-weight: 600; }
+.comment-author:hover { color: var(--color-primary); }
 .comment-header span { color: var(--color-text-muted); font-size: 0.8rem; }
 .comment-item p { margin: 0; font-size: 0.95rem; color: var(--color-text-secondary); }
 </style>

@@ -113,6 +113,20 @@ def get_all_tags(db: Session) -> list[Tag]:
     return db.query(Tag).all()
 
 
+def get_user_profile(db: Session, username: str) -> dict | None:
+    user = db.query(User).filter_by(username=username).first()
+    if not user:
+        return None
+    posts = (
+        db.query(Post)
+        .options(joinedload(Post.tags))
+        .filter_by(author_id=user.id, status="published")
+        .order_by(Post.created_at.desc())
+        .all()
+    )
+    return {"user": user, "posts": posts}
+
+
 # ── Comment ──
 
 def create_comment(db: Session, user_id: int, post_id: int, content: str) -> Comment:

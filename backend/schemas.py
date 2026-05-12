@@ -123,6 +123,18 @@ class PostDetailResponse(BaseModel):
         return [getattr(t, "name", t) for t in v]
 
 
+class UserProfileResponse(BaseModel):
+    id: int
+    username: str
+    avatar: str
+    bio: str
+    github_url: str
+    created_at: datetime
+    posts: list[PostListResponse] = []
+
+    model_config = {"from_attributes": True}
+
+
 # ── Tag ──
 
 class TagResponse(BaseModel):

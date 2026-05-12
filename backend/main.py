@@ -20,6 +20,7 @@ from crud import (
     get_post_by_slug,
     get_post_by_id,
     get_posts_by_user,
+    get_user_profile,
     update_post,
     delete_post,
     get_all_tags,
@@ -37,6 +38,7 @@ from schemas import (
     PostDetailResponse,
     CommentCreate,
     CommentResponse,
+    UserProfileResponse,
     TagResponse,
 )
 
@@ -254,6 +256,16 @@ def delete_post_route(request: Request, post_id: int, current_user: User = Depen
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
     _author_or_admin(post, current_user)
     delete_post(db, post)
+
+
+# ── User routes ──
+
+@app.get("/api/users/{username}", response_model=UserProfileResponse)
+def get_user(username: str, db: Session = Depends(get_db)):
+    profile = get_user_profile(db, username)
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return {"posts": profile["posts"], **UserResponse.model_validate(profile["user"]).model_dump()}
 
 
 # ── Tag routes ──

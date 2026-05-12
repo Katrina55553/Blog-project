@@ -40,6 +40,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/user/:username",
+    name: "user-profile",
+    component: () => import("../views/UserProfile.vue"),
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "not-found",
     component: () => import("../views/NotFoundView.vue"),
