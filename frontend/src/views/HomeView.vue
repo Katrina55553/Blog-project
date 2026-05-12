@@ -94,12 +94,11 @@ watch(q, () => {
 
     <div v-else class="posts">
       <article v-for="post in posts" :key="post.id" class="card">
-        <router-link :to="`/post/${post.slug}`" class="title">
-          {{ post.title }}
-        </router-link>
+        <router-link :to="`/post/${post.slug}`" class="card-link" :aria-label="post.title"></router-link>
+        <h2 class="title">{{ post.title }}</h2>
         <p class="summary">{{ post.summary }}</p>
         <div class="meta">
-          <router-link :to="`/user/${post.author?.username}`" class="author">{{ post.author?.username }}</router-link>
+          <router-link :to="`/user/${post.author?.username}`" class="author" @click.stop>{{ post.author?.username }}</router-link>
           <span class="date">{{ new Date(post.created_at).toLocaleDateString() }}</span>
           <span v-if="post.tags?.length" class="tags">
             <button
@@ -107,7 +106,7 @@ watch(q, () => {
               :key="t"
               class="tag"
               :class="{ active: tag === t }"
-              @click="selectTag(t)"
+              @click.prevent.stop="selectTag(t)"
             >
               {{ t }}
             </button>
@@ -205,6 +204,7 @@ h1 { margin-bottom: 0.5rem; color: var(--color-text); }
   100% { opacity: 0.4; }
 }
 .card {
+  position: relative;
   padding: 1.4rem;
   margin-bottom: 0.8rem;
   background: var(--color-bg-secondary);
@@ -216,13 +216,18 @@ h1 { margin-bottom: 0.5rem; color: var(--color-text); }
   background: var(--color-card-hover);
   box-shadow: var(--shadow-sm);
 }
+.card-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
 .title {
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--color-text);
-  text-decoration: none;
+  margin: 0 0 0.4rem 0;
 }
-.title:hover { color: var(--color-primary); }
+.card:hover .title { color: var(--color-primary); }
 .summary {
   margin: 0.4rem 0;
   color: var(--color-text-secondary);
@@ -235,9 +240,9 @@ h1 { margin-bottom: 0.5rem; color: var(--color-text); }
   font-size: 0.85rem;
   color: var(--color-text-muted);
 }
-.author { color: var(--color-text-muted); text-decoration: none; }
+.author { color: var(--color-text-muted); text-decoration: none; position: relative; z-index: 2; }
 .author:hover { color: var(--color-primary); }
-.tags { display: flex; gap: 0.3rem; }
+.tags { display: flex; gap: 0.3rem; position: relative; z-index: 2; }
 .tag {
   background: var(--color-tag-bg);
   border: none;

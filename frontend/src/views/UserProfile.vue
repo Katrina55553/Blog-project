@@ -45,7 +45,8 @@ onMounted(fetchProfile);
         <h2>文章 ({{ profile.posts?.length || 0 }})</h2>
         <div v-if="profile.posts?.length">
           <article v-for="post in profile.posts" :key="post.id" class="card">
-            <router-link :to="`/post/${post.slug}`" class="title">{{ post.title }}</router-link>
+            <router-link :to="`/post/${post.slug}`" class="card-link" :aria-label="post.title"></router-link>
+            <h2 class="title">{{ post.title }}</h2>
             <p class="summary">{{ post.summary }}</p>
             <div class="meta">
               <span>{{ new Date(post.created_at).toLocaleDateString() }}</span>
@@ -109,6 +110,7 @@ h1 { color: var(--color-text); margin-bottom: 0.5rem; }
 .user-posts h2 { margin-bottom: 1rem; color: var(--color-text); font-size: 1.2rem; }
 
 .card {
+  position: relative;
   padding: 1.4rem;
   margin-bottom: 0.8rem;
   background: var(--color-bg-secondary);
@@ -117,13 +119,18 @@ h1 { color: var(--color-text); margin-bottom: 0.5rem; }
   transition: background 0.2s;
 }
 .card:hover { background: var(--color-card-hover); }
+.card-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
 .title {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--color-text);
-  text-decoration: none;
+  margin: 0 0 0.3rem 0;
 }
-.title:hover { color: var(--color-primary); }
+.card:hover .title { color: var(--color-primary); }
 .summary {
   margin: 0.3rem 0;
   color: var(--color-text-secondary);
