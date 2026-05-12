@@ -205,6 +205,8 @@ def list_my_posts(page: int = 1, size: int = 20, current_user: User = Depends(ge
 @app.post("/api/admin/posts", response_model=PostDetailResponse, status_code=201)
 @limiter.limit("10/minute")
 def create_post_route(request: Request, data: PostCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if get_post_by_slug(db, data.slug):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already exists")
     return create_post(
         db, current_user.id,
         sanitize(data.title),

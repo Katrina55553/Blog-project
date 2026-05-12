@@ -28,6 +28,7 @@ export const useAuthStore = defineStore("auth", () => {
   async function login(username, password) {
     const res = await apiLogin(username, password);
     setAuth(res.data.access_token, { username });
+    await restoreUser();
     return res.data;
   }
 
