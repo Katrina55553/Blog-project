@@ -19,12 +19,18 @@ uvicorn main:app --reload --port 8000
 cd frontend
 npm install
 npm run dev                     # :5173, proxies /api → :8000
+npm run build                   # production build → dist/
+npm run preview                 # preview production build locally
 
 # Seed test data (backend venv)
 cd backend && python seed.py    # admin / admin123
 ```
 
 Both servers must run simultaneously. Frontend dev server proxies `/api` to backend via `vite.config.js`.
+
+Swagger docs at `http://localhost:8000/docs` — useful for testing endpoints during development.
+
+There is no test suite or linter configured yet.
 
 ## Backend Architecture
 
@@ -98,8 +104,12 @@ frontend/src/
 - **Loading states**: Skeleton shimmer animations on HomeView (card list) and PostDetailView (content)
 - **Error states**: Retry buttons on load failure
 - **Comment model**: `username` property delegates to `author.username` relationship for Pydantic serialization
+- **Slug generation**: Frontend auto-generates slug from title via `@input` on the title field. Paste events don't trigger this (known limitation) — use `@change` if fixing that
+- **Dead code**: `components/HelloWorld.vue` is the default Vite scaffold component and is unused
 
 ## Database
+
+SQLite for development (file-based, zero config). The README references PostgreSQL for production, but no PostgreSQL setup or migration tooling is implemented yet.
 
 - **users**: id, username, password_hash, avatar, bio, github_url, created_at
 - **posts**: id, title, slug, content, summary, author_id (FK), status, created_at, updated_at
@@ -114,3 +124,4 @@ frontend/src/
 - HTML sanitization via bleach (whitelist tags/attributes only)
 - Rate limiting via slowapi on auth and write endpoints
 - CORS restricted to `localhost:5173`
+- **JWT `sub` type gotcha**: `payload.get("sub")` returns a string, but `User.id` is an integer. SQLAlchemy's `filter_by` handles the coercion, so it works, but if you ever use `filter(User.id == ...)` or direct comparison, you must cast to `int` first
