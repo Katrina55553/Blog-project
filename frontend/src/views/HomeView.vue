@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getPosts } from "../api/post";
 
@@ -10,11 +10,12 @@ const posts = ref([]);
 const total = ref(0);
 const pages = ref(0);
 const page = ref(1);
-const tag = ref(route.query.tag || "");
-const q = ref(route.query.q || "");
+const tag = ref("");
+const searchInput = ref(route.query.q || "");
 const loading = ref(true);
 const error = ref("");
 
+const q = computed(() => route.query.q || "");
 const size = 10;
 
 async function fetchPosts() {
@@ -40,9 +41,15 @@ function selectTag(t) {
   tag.value = tag.value === t ? "" : t;
 }
 
-function clearSearch() {
-  q.value = "";
-  router.push("/");
+function doSearch() {
+  const val = searchInput.value.trim();
+  page.value = 1;
+  tag.value = "";
+  if (val) {
+    router.push({ name: "home", query: { q: val } });
+  } else {
+    router.push({ name: "home" });
+  }
 }
 
 onMounted(fetchPosts);
@@ -53,18 +60,23 @@ watch(tag, () => {
 });
 watch(q, () => {
   page.value = 1;
+  tag.value = "";
   fetchPosts();
 });
 </script>
 
 <template>
   <div class="home">
+    <form class="search-bar" @submit.prevent="doSearch">
+      <input v-model="searchInput" type="search" placeholder="搜索文章..." class="search-input" />
+    </form>
+
     <h1 v-if="q">搜索: "{{ q }}"</h1>
     <h1 v-else>文章列表</h1>
 
     <p v-if="q && !loading" class="search-info">
       找到 {{ total }} 篇文章
-      <button class="btn-clear" @click="clearSearch">清除搜索</button>
+      <router-link to="/" class="btn-clear">清除搜索</router-link>
     </p>
 
     <div v-if="loading" class="skeleton-list">
@@ -117,6 +129,23 @@ watch(q, () => {
 <style scoped>
 .home { max-width: 700px; margin: 0 auto; }
 h1 { margin-bottom: 0.5rem; color: var(--color-text); }
+
+/* Search bar */
+.search-bar { margin-bottom: 1.5rem; }
+.search-input {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  box-sizing: border-box;
+  background: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-input:focus { border-color: var(--color-primary); }
+
 .search-info {
   margin-bottom: 1rem;
   color: var(--color-text-muted);
@@ -133,6 +162,7 @@ h1 { margin-bottom: 0.5rem; color: var(--color-text); }
   cursor: pointer;
   color: var(--color-text-muted);
   font-size: 0.8rem;
+  text-decoration: none;
 }
 .btn-clear:hover { color: var(--color-text); border-color: var(--color-text); }
 .state { text-align: center; padding: 2rem; color: var(--color-text-muted); }

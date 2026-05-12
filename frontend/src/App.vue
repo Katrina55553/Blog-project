@@ -9,17 +9,6 @@ const auth = useAuthStore();
 const isDark = ref(false);
 const menuOpen = ref(false);
 const navRef = ref(null);
-const searchQuery = ref("");
-
-function doSearch() {
-  const q = searchQuery.value.trim();
-  closeMenu();
-  if (q) {
-    router.push({ name: "home", query: { q } });
-  } else {
-    router.push({ name: "home" });
-  }
-}
 
 function onDocClick(e) {
   if (menuOpen.value && navRef.value && !navRef.value.contains(e.target)) {
@@ -70,9 +59,6 @@ function logout() {
     </button>
     <nav ref="navRef" :class="{ open: menuOpen }">
       <router-link to="/" @click="closeMenu">首页</router-link>
-      <form class="search-form" @submit.prevent="doSearch">
-        <input v-model="searchQuery" type="search" placeholder="搜索..." class="search-input" />
-      </form>
       <template v-if="auth.user">
         <router-link to="/admin" @click="closeMenu">后台</router-link>
         <router-link to="/admin/posts/new" @click="closeMenu">写文章</router-link>
@@ -164,20 +150,6 @@ nav a:hover { color: var(--color-text); }
   line-height: 1;
   flex-shrink: 0;
 }
-
-/* Search */
-.search-form { flex-shrink: 0; }
-.search-input {
-  padding: 0.3rem 0.6rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  font-size: 0.9rem;
-  width: 140px;
-  background: var(--color-bg);
-  color: var(--color-text);
-  outline: none;
-}
-.search-input:focus { border-color: var(--color-primary); }
 
 .container {
   max-width: 800px;
