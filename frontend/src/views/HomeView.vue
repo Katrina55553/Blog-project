@@ -10,7 +10,8 @@ const posts = ref([]);
 const total = ref(0);
 const pages = ref(0);
 const page = ref(1);
-const tag = ref("");
+const tag = ref(route.query.tag || "");
+const q = ref(route.query.q || "");
 const loading = ref(true);
 const error = ref("");
 
@@ -20,7 +21,7 @@ async function fetchPosts() {
   loading.value = true;
   error.value = "";
   try {
-    const res = await getPosts(page.value, size, tag.value);
+    const res = await getPosts(page.value, size, tag.value, q.value);
     posts.value = res.data.items;
     total.value = res.data.total;
     pages.value = res.data.pages;
@@ -39,9 +40,18 @@ function selectTag(t) {
   tag.value = tag.value === t ? "" : t;
 }
 
+function clearSearch() {
+  q.value = "";
+  router.push("/");
+}
+
 onMounted(fetchPosts);
 watch(page, fetchPosts);
 watch(tag, () => {
+  page.value = 1;
+  fetchPosts();
+});
+watch(q, () => {
   page.value = 1;
   fetchPosts();
 });
@@ -49,7 +59,13 @@ watch(tag, () => {
 
 <template>
   <div class="home">
-    <h1>文章列表</h1>
+    <h1 v-if="q">搜索: "{{ q }}"</h1>
+    <h1 v-else>文章列表</h1>
+
+    <p v-if="q && !loading" class="search-info">
+      找到 {{ total }} 篇文章
+      <button class="btn-clear" @click="clearSearch">清除搜索</button>
+    </p>
 
     <div v-if="loading" class="skeleton-list">
       <div v-for="n in 3" :key="n" class="skeleton-card">
@@ -100,7 +116,25 @@ watch(tag, () => {
 
 <style scoped>
 .home { max-width: 700px; margin: 0 auto; }
-h1 { margin-bottom: 1.5rem; color: var(--color-text); }
+h1 { margin-bottom: 0.5rem; color: var(--color-text); }
+.search-info {
+  margin-bottom: 1rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-clear {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+.btn-clear:hover { color: var(--color-text); border-color: var(--color-text); }
 .state { text-align: center; padding: 2rem; color: var(--color-text-muted); }
 .error { color: var(--color-danger); }
 .btn-retry {

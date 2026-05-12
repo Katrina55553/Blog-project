@@ -1,7 +1,7 @@
 import client from "./client";
 
-export function getPosts(page = 1, size = 10, tag = "") {
-  return client.get("/posts", { params: { page, size, tag } });
+export function getPosts(page = 1, size = 10, tag = "", q = "") {
+  return client.get("/posts", { params: { page, size, tag, q } });
 }
 
 export function getMyPosts(page = 1, size = 20) {

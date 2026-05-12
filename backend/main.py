@@ -150,8 +150,8 @@ def update_me(data: UserUpdate, current_user: User = Depends(get_current_user), 
 # ── Public post routes ──
 
 @app.get("/api/posts")
-def list_posts(page: int = 1, size: int = 10, tag: str = "", db: Session = Depends(get_db)):
-    posts, total = get_posts(db, page=page, size=size, tag=tag)
+def list_posts(page: int = 1, size: int = 10, tag: str = "", q: str = "", db: Session = Depends(get_db)):
+    posts, total = get_posts(db, page=page, size=size, tag=tag, q=q)
     items = []
     for p in posts:
         items.append({

@@ -1,3 +1,4 @@
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from auth import hash_password
@@ -57,10 +58,12 @@ def create_post(db: Session, author_id: int, title: str, slug: str,
     return post
 
 
-def get_posts(db: Session, page: int = 1, size: int = 10, tag: str = ""):
+def get_posts(db: Session, page: int = 1, size: int = 10, tag: str = "", q: str = ""):
     query = db.query(Post).options(joinedload(Post.author), joinedload(Post.tags))
     if tag:
         query = query.join(Post.tags).filter(Tag.name == tag)
+    if q:
+        query = query.filter(or_(Post.title.ilike(f"%{q}%"), Post.content.ilike(f"%{q}%")))
     total = query.count()
     posts = (
         query.order_by(Post.created_at.desc())
