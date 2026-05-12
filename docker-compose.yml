@@ -1,13 +1,31 @@
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=blog
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-change-me}
+      - POSTGRES_DB=blog
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blog"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   backend:
     build: ./backend
     restart: unless-stopped
     environment:
       - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
-      - DATABASE_URL=sqlite:////data/blog.db
+      - DATABASE_URL=postgresql://blog:${DB_PASSWORD:-change-me}@db:5432/blog
     volumes:
       - data:/data
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
@@ -19,4 +37,4 @@ services:
 
 volumes:
   data:
-
+  db-data:
