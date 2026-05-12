@@ -62,7 +62,7 @@ function logout() {
       <template v-if="auth.user">
         <router-link to="/admin" @click="closeMenu">后台</router-link>
         <router-link to="/admin/posts/new" @click="closeMenu">写文章</router-link>
-        <span class="user">{{ auth.user.username }}</span>
+        <span class="user"><router-link to="/profile/edit" @click="closeMenu" class="user-link">{{ auth.user.username }}</router-link></span>
         <a href="#" @click.prevent="logout">退出</a>
       </template>
       <template v-else>
@@ -132,10 +132,14 @@ nav a {
 }
 nav a:hover { color: var(--color-text); }
 .user {
-  color: var(--color-text-muted);
   font-size: 0.9rem;
   white-space: nowrap;
 }
+.user-link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+.user-link:hover { color: var(--color-primary); }
 .theme-toggle {
   background: none;
   border: 1px solid var(--color-border);

@@ -18,6 +18,15 @@ def get_user_by_username(db: Session, username: str) -> User | None:
     return db.query(User).filter_by(username=username).first()
 
 
+def update_user(db: Session, user: User, data: dict) -> User:
+    for field in ("avatar", "bio", "github_url"):
+        if data.get(field) is not None:
+            setattr(user, field, data[field])
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 # ── Post ──
 
 def _get_or_create_tags(db: Session, tag_names: list[str]) -> list[Tag]:

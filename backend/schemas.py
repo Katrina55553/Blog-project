@@ -34,6 +34,12 @@ class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class UserUpdate(BaseModel):
+    avatar: str | None = None
+    bio: str | None = None
+    github_url: str | None = None
+
+
 # ── Post ──
 
 class PostCreate(BaseModel):

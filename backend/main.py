@@ -23,6 +23,7 @@ from crud import (
     get_posts_by_user,
     get_user_profile,
     update_post,
+    update_user,
     delete_post,
     get_all_tags,
     create_comment,
@@ -34,6 +35,7 @@ from schemas import (
     UserLogin,
     UserRegister,
     UserResponse,
+    UserUpdate,
     PostCreate,
     PostUpdate,
     PostDetailResponse,
@@ -138,6 +140,11 @@ def login(request: Request, data: UserLogin, db: Session = Depends(get_db)):
 @app.get("/api/auth/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@app.put("/api/auth/me", response_model=UserResponse)
+def update_me(data: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return update_user(db, current_user, data.model_dump(exclude_unset=True))
 
 
 # ── Public post routes ──

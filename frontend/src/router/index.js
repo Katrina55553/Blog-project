@@ -44,6 +44,12 @@ const routes = [
     meta: { requiresAuth: true, title: "编辑文章" },
   },
   {
+    path: "/profile/edit",
+    name: "profile-edit",
+    component: () => import("../views/ProfileEdit.vue"),
+    meta: { requiresAuth: true, title: "编辑资料" },
+  },
+  {
     path: "/user/:username",
     name: "user-profile",
     component: () => import("../views/UserProfile.vue"),

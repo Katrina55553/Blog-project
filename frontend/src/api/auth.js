@@ -11,3 +11,7 @@ export function login(username, password) {
 export function getMe() {
   return client.get("/auth/me");
 }
+
+export function updateMe(data) {
+  return client.put("/auth/me", data);
+}
