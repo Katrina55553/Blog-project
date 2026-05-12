@@ -97,7 +97,7 @@ onBeforeUnmount(() => {
           <span v-else class="avatar-text">{{ userInitial() }}</span>
         </button>
         <div v-if="userMenuOpen" class="dropdown">
-          <button class="dropdown-item" @click="goProfile">{{ auth.user.username }}</button>
+          <button class="dropdown-item" @click="goProfile">编辑资料</button>
           <button class="dropdown-item logout" @click="logout">退出账号</button>
         </div>
       </div>
