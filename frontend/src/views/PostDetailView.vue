@@ -20,10 +20,6 @@ const commentText = ref("");
 const commentLoading = ref(false);
 const commentError = ref("");
 
-const isAuthor = computed(() =>
-  auth.user && post.value && auth.user.id === post.value.author_id,
-);
-
 marked.setOptions({
   highlight(code, lang) {
     if (lang && hljs.getLanguage(lang)) {
@@ -32,6 +28,10 @@ marked.setOptions({
     return hljs.highlightAuto(code).value;
   },
 });
+
+const isAuthor = computed(() =>
+  auth.user && post.value && auth.user.id === post.value.author_id,
+);
 
 const renderedContent = computed(() => {
   if (!post.value?.content) return "";
@@ -72,6 +72,7 @@ async function handleComment() {
   try {
     await createComment(post.value.id, commentText.value);
     commentText.value = "";
+    commentError.value = "";
     await fetchPost(); // refresh to show new comment
   } catch (e) {
     commentError.value = e.response?.data?.detail || "评论失败";

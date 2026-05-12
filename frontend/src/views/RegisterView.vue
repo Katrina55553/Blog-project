@@ -41,15 +41,15 @@ async function handleRegister() {
       <div v-if="error" class="error">{{ error }}</div>
       <label>
         <span>用户名</span>
-        <input v-model="username" type="text" />
+        <input v-model="username" type="text" autocomplete="username" />
       </label>
       <label>
         <span>密码</span>
-        <input v-model="password" type="password" />
+        <input v-model="password" type="password" autocomplete="new-password" />
       </label>
       <label>
         <span>确认密码</span>
-        <input v-model="confirm" type="password" />
+        <input v-model="confirm" type="password" autocomplete="new-password" />
       </label>
       <button type="submit" :disabled="loading">
         {{ loading ? "注册中..." : "注册" }}

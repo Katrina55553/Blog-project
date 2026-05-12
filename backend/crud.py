@@ -18,10 +18,6 @@ def get_user_by_username(db: Session, username: str) -> User | None:
     return db.query(User).filter_by(username=username).first()
 
 
-def get_user_by_id(db: Session, user_id: int) -> User | None:
-    return db.query(User).filter_by(id=user_id).first()
-
-
 # ── Post ──
 
 def _get_or_create_tags(db: Session, tag_names: list[str]) -> list[Tag]:

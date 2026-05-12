@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { marked } from "marked";
-import { createPost, updatePost, getPostBySlug, getPostById } from "../api/post";
+import { createPost, updatePost, getPostById } from "../api/post";
 
 const route = useRoute();
 const router = useRouter();
@@ -32,6 +32,10 @@ function autoSlug() {
       .replace(/[^a-z0-9-]/g, "");
   }
 }
+
+watch(title, () => {
+  if (!isEdit.value) autoSlug();
+});
 
 async function fetchPost() {
   loading.value = true;
@@ -98,7 +102,11 @@ onMounted(() => {
   <div class="admin-post-edit">
     <h1>{{ isEdit ? "编辑文章" : "写新文章" }}</h1>
 
-    <div v-if="loading" class="state">加载中...</div>
+    <div v-if="loading" class="skeleton-edit">
+      <div class="skeleton-line w-60 h-28"></div>
+      <div class="skeleton-line w-30 h-14"></div>
+      <div class="skeleton-line w-100 h-200"></div>
+    </div>
 
     <form v-else @submit.prevent="handleSave" class="editor-form">
       <div v-if="error" class="error">{{ error }}</div>
@@ -229,4 +237,28 @@ textarea { resize: vertical; }
 .btn-save:disabled { opacity: 0.5; }
 .btn-cancel { color: var(--color-text-muted); text-decoration: none; font-size: 0.95rem; }
 .btn-cancel:hover { color: var(--color-text); }
+
+/* Skeleton for edit page */
+.skeleton-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+.skeleton-edit .skeleton-line {
+  background: var(--color-border);
+  border-radius: 4px;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-edit .skeleton-line.w-60 { width: 60%; }
+.skeleton-edit .skeleton-line.w-30 { width: 30%; }
+.skeleton-edit .skeleton-line.w-100 { width: 100%; }
+.skeleton-edit .skeleton-line.h-28 { height: 28px; }
+.skeleton-edit .skeleton-line.h-14 { height: 14px; }
+.skeleton-edit .skeleton-line.h-200 { height: 200px; }
+@keyframes shimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
+}
 </style>

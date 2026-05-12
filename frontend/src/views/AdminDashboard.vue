@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { getMyPosts, deletePost } from "../api/post";
 
@@ -7,18 +7,28 @@ const router = useRouter();
 const posts = ref([]);
 const loading = ref(true);
 const error = ref("");
+const page = ref(1);
+const total = ref(0);
+const pages = ref(0);
+const size = 10;
 
 async function fetchPosts() {
   loading.value = true;
   error.value = "";
   try {
-    const res = await getMyPosts(1, 100);
+    const res = await getMyPosts(page.value, size);
     posts.value = res.data.items;
+    total.value = res.data.total;
+    pages.value = res.data.pages;
   } catch {
     error.value = "加载失败";
   } finally {
     loading.value = false;
   }
+}
+
+function goPage(p) {
+  page.value = p;
 }
 
 async function handleDelete(post) {
@@ -36,6 +46,7 @@ function goEdit(post) {
 }
 
 onMounted(fetchPosts);
+watch(page, fetchPosts);
 </script>
 
 <template>
@@ -43,7 +54,12 @@ onMounted(fetchPosts);
     <h1>我的文章</h1>
     <router-link to="/admin/posts/new" class="btn-new">+ 写新文章</router-link>
 
-    <div v-if="loading" class="state">加载中...</div>
+    <div v-if="loading" class="skeleton-list">
+      <div v-for="n in 5" :key="n" class="skeleton-row">
+        <div class="skeleton-line w-50"></div>
+        <div class="skeleton-line w-20"></div>
+      </div>
+    </div>
     <div v-else-if="error" class="state">
       <p>{{ error }}</p>
       <button class="btn-retry" @click="fetchPosts">重试</button>
@@ -71,6 +87,14 @@ onMounted(fetchPosts);
         </tr>
       </tbody>
     </table>
+
+    <div v-if="pages > 1" class="pagination">
+      <button :disabled="page <= 1" @click="goPage(page - 1)">上一页</button>
+      <span v-for="p in pages" :key="p">
+        <button :class="{ current: p === page }" @click="goPage(p)">{{ p }}</button>
+      </span>
+      <button :disabled="page >= pages" @click="goPage(pages)">下一页</button>
+    </div>
   </div>
 </template>
 
@@ -129,4 +153,44 @@ h1 { margin-bottom: 1rem; color: var(--color-text); }
   color: var(--color-text);
   cursor: pointer;
 }
+
+/* Skeleton */
+.skeleton-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.skeleton-row {
+  display: flex;
+  gap: 2rem;
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.skeleton-line {
+  height: 14px;
+  background: var(--color-border);
+  border-radius: 4px;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-line.w-50 { width: 50%; }
+.skeleton-line.w-20 { width: 20%; }
+@keyframes shimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 2rem;
+}
+.pagination button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination button.current { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
 </style>

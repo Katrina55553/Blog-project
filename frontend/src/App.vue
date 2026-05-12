@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "./stores/auth";
 
@@ -8,6 +8,13 @@ const auth = useAuthStore();
 
 const isDark = ref(false);
 const menuOpen = ref(false);
+const navRef = ref(null);
+
+function onDocClick(e) {
+  if (menuOpen.value && navRef.value && !navRef.value.contains(e.target)) {
+    closeMenu();
+  }
+}
 
 function initTheme() {
   const saved = localStorage.getItem("theme");
@@ -30,6 +37,11 @@ function closeMenu() {
 onMounted(() => {
   initTheme();
   auth.restoreUser();
+  document.addEventListener("click", onDocClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", onDocClick);
 });
 
 function logout() {
@@ -45,7 +57,7 @@ function logout() {
     <button class="hamburger" @click="menuOpen = !menuOpen" :aria-label="menuOpen ? '关闭菜单' : '打开菜单'">
       <span></span><span></span><span></span>
     </button>
-    <nav :class="{ open: menuOpen }">
+    <nav ref="navRef" :class="{ open: menuOpen }">
       <router-link to="/" @click="closeMenu">首页</router-link>
       <template v-if="auth.user">
         <router-link to="/admin" @click="closeMenu">后台</router-link>

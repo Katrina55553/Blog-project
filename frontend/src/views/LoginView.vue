@@ -38,11 +38,11 @@ async function handleLogin() {
       <div v-if="error" class="error">{{ error }}</div>
       <label>
         <span>用户名</span>
-        <input v-model="username" type="text" />
+        <input v-model="username" type="text" autocomplete="username" />
       </label>
       <label>
         <span>密码</span>
-        <input v-model="password" type="password" />
+        <input v-model="password" type="password" autocomplete="current-password" />
       </label>
       <button type="submit" :disabled="loading">
         {{ loading ? "登录中..." : "登录" }}
