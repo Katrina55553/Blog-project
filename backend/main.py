@@ -234,9 +234,10 @@ def update_post_route(request: Request, post_id: int, data: PostUpdate, current_
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
     _author_or_admin(post, current_user)
     payload = data.model_dump(exclude_unset=True)
-    if payload.get("title"):
-        payload["title"] = sanitize(payload["title"])
     if payload.get("slug"):
+        existing = get_post_by_slug(db, payload["slug"])
+        if existing and existing.id != post_id:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already exists")
         payload["slug"] = sanitize(payload["slug"])
     if payload.get("content"):
         payload["content"] = sanitize(payload["content"])
@@ -267,6 +268,8 @@ def list_tags(db: Session = Depends(get_db)):
 @app.post("/api/comments", response_model=CommentResponse, status_code=201)
 @limiter.limit("10/minute")
 def create_comment_route(request: Request, data: CommentCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not get_post_by_id(db, data.post_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
     return create_comment(db, current_user.id, data.post_id, sanitize(data.content))
 
 
