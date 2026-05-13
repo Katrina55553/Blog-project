@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A personal technical blog system — minimalist, high-performance. Full-stack: Vue 3 frontend, FastAPI backend, SQLite database, JWT authentication.
+A personal technical blog system — minimalist, high-performance. Full-stack: Vue 3 frontend, FastAPI backend, PostgreSQL database, JWT authentication, Docker deployment.
 
 ## Commands
 
@@ -86,7 +86,7 @@ backend/
 
 ```
 frontend/src/
-├── App.vue           # Navbar, theme toggle, hamburger menu, router-view
+├── App.vue           # Navbar, theme toggle, hamburger menu, mounts global components (AppToast, ConfirmDialog, BackToTop)
 ├── main.js           # App bootstrap: Pinia + Router
 ├── style.css         # Global styles: 26 CSS variables, light/dark theme
 ├── router/index.js   # 10 routes, lazy-loaded, beforeEach auth guard, scrollBehavior, afterEach title
@@ -95,12 +95,20 @@ frontend/src/
 │   ├── client.js     # Axios instance, auth interceptor, 401 redirect with ?redirect=
 │   ├── auth.js       # register(), login(), getMe(), updateMe()
 │   ├── post.js       # CRUD functions + getMyPosts()
-│   ├── comment.js    # createComment()
+│   ├── comment.js    # createComment(postId, content, parentId?)
 │   ├── like.js       # likePost(), unlikePost()
 │   └── user.js       # getUserProfile()
+├── components/
+│   ├── AppToast.vue       # Toast notifications (success/error/info), auto-dismiss, slide-in animation
+│   ├── BackToTop.vue      # Floating back-to-top button, appears at scroll >400px, smooth scroll
+│   ├── CommentItem.vue    # Recursive nested comment (楼中楼), inline reply form, indented threading
+│   └── ConfirmDialog.vue  # Modal confirmation dialog, ESC/overlay to cancel, Promise-based
+├── composables/
+│   ├── toast.js     # Module-level reactive toast state, showToast.success/error/info()
+│   └── confirm.js   # Module-level reactive confirm state, showConfirm(msg) → Promise<boolean>
 └── views/
     ├── HomeView.vue         # Article list, pagination, tag filter, full-text search
-    ├── PostDetailView.vue   # Markdown rendering (marked + highlight.js), comments, likes, author actions
+    ├── PostDetailView.vue   # Markdown rendering (marked + highlight.js), nested comments, likes, author actions
     ├── LoginView.vue        # Login form with redirect support, autocomplete attrs
     ├── RegisterView.vue     # Registration form with validation, autocomplete attrs
     ├── AdminDashboard.vue   # My articles table, pagination, skeleton loading, edit/delete
@@ -113,15 +121,17 @@ frontend/src/
 ### Key patterns
 
 - **Auth guard**: `router.beforeEach` checks localStorage token for `/admin/*` and `/profile/*` routes, redirects to `/login` with `?redirect=` param
+- **Optional auth**: `get_optional_user` dependency returns User or None — used by public routes that need context (e.g. detail_post for `is_liked`)
 - **Admin guard**: `_author_or_admin` backend helper; frontend nav shows admin links for all logged-in users (personal dashboard)
 - **Theme system**: 26 CSS custom properties (colors, shadows, fonts, spacing). Dark mode toggle in navbar, persisted to localStorage, auto-detects `prefers-color-scheme` on first visit
 - **Responsive**: Hamburger menu at ≤640px, sticky navbar, outside-click to close
 - **Loading states**: Skeleton shimmer animations on HomeView (card list), PostDetailView (content), AdminDashboard (table rows), AdminPostEdit (form fields)
 - **Error states**: Retry buttons on load failure across all data-fetching views
-- **Comment model**: `username` property delegates to `author.username` relationship for Pydantic serialization
+- **Toast/Confirm**: Module-level reactive state (composables/toast.js, composables/confirm.js). Components mounted once in App.vue. Any view imports `showToast`/`showConfirm` directly.
+- **Nested comments**: `Comment.comments` has `parent_id` (self-referential FK). `build_comment_tree()` in crud.py converts flat list to nested dicts for API. `CommentItem.vue` renders recursively with depth-based indentation.
 - **Slug generation**: Frontend auto-generates slug from title via `watch(title)` (handles paste too)
 - **Search**: Full-width search input on HomeView; backend uses `or_(Post.title.ilike(), Post.content.ilike())` via `?q=` param
-- **Likes**: `likes` table (user_id + post_id composite PK); like count in post responses; `is_liked` tracked client-side
+- **Likes**: `likes` table (user_id + post_id composite PK); `like_post()` handles IntegrityError for idempotency; `is_liked` resolved server-side via optional auth
 - **Post responses**: `author` object (id, username, avatar) eagerly loaded; `tags` coerced from ORM objects to strings
 - **Pagination**: Snake-case params (page, size); returns items, total, page, size, pages
 - **Page titles**: `router.afterEach` sets `document.title` from route meta (format: "Page - My Blog")
@@ -137,7 +147,7 @@ PostgreSQL for both dev and production. Default connection: `postgresql://blog:b
 - **posts**: id, title, slug, content, summary, author_id (FK), status, created_at, updated_at
 - **tags**: id, name
 - **post_tags**: post_id, tag_id (many-to-many)
-- **comments**: id, content, post_id, user_id, created_at
+- **comments**: id, content, post_id, user_id, parent_id (self-ref FK), created_at
 - **likes**: user_id, post_id (composite PK, many-to-many between users and posts)
 
 ## Security

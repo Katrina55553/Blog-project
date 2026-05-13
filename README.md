@@ -6,133 +6,153 @@ A minimalist, high-performance personal technical blog system powered by **Vue 3
 
 ## Tech Stack / 技术栈
 
-| Layer 层    | Technology 技术                          |
-| ----------- | ---------------------------------------- |
+| Layer 层     | Technology 技术                           |
+| ------------ | ----------------------------------------- |
 | Frontend 前端 | Vue 3 · Vite · Vue Router · Pinia · Axios |
-| Backend 后端  | FastAPI · SQLAlchemy · JWT               |
-| Database 数据库 | SQLite (dev) / PostgreSQL (prod)         |
-| Auth 认证    | JWT (24h expiry, bcrypt hashing)          |
+| Backend 后端  | FastAPI · SQLAlchemy · JWT                |
+| Database 数据库 | PostgreSQL (dev + prod)                   |
+| Auth 认证     | JWT (24h expiry, bcrypt)                  |
+| Deploy 部署   | Docker · docker-compose                   |
 
 ## Getting Started / 快速开始
 
-### Prerequisites / 环境要求
-
-- Python 3.12+
-- Node.js 24+
-
-### Backend / 后端
+### Option A: Docker (recommended) / Docker 部署
 
 ```bash
+cp .env.example .env
+# Edit .env — fill in SECRET_KEY
+docker compose up -d
+```
+
+App: `http://localhost:80` · API: `http://localhost:8000`
+
+### Option B: Manual / 手动启动
+
+**Prerequisites / 环境要求:** Python 3.12+ / Node.js 24+ / PostgreSQL
+
+```bash
+# Database — start via Docker or local install
+docker compose up db -d        # PG only, or use local PostgreSQL
+
+# Backend
 cd backend
 python -m venv venv
 source venv/Scripts/activate   # Windows: venv\Scripts\activate.bat
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
-```
 
-API: `http://localhost:8000` · Swagger: `http://localhost:8000/docs`
-
-### Frontend / 前端
-
-```bash
+# Frontend (new terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-App: `http://localhost:5173` (API proxy → `:8000`)
+API: `http://localhost:8000` · Swagger: `http://localhost:8000/docs` · App: `http://localhost:5173`
 
 ### Seed Data / 测试数据
 
 ```bash
 cd backend
-venv/Scripts/python seed.py
+source venv/Scripts/activate   # or venv\Scripts\activate.bat
+python seed.py                 # admin / admin123
 ```
-
-Creates test user `admin / admin123` with a sample post.
-创建测试用户 `admin / admin123` 及一篇示例文章。
 
 ## API Overview / API 概览
 
-### Public / 公开接口
+### Public / 公开
 
-| Method | Path                     | Description / 说明                       |
-| ------ | ------------------------ | ---------------------------------------- |
-| GET    | `/api/posts`             | Article list 文章列表 (?page=&size=&tag=&q=) |
-| GET    | `/api/posts/{slug}`      | Article detail 文章详情 + comments + likes |
-| GET    | `/api/tags`              | All tags 所有标签                          |
-| GET    | `/api/users/{username}`  | User profile 用户主页 + their posts        |
-| POST   | `/api/auth/register`     | Register 注册                              |
-| POST   | `/api/auth/login`        | Login 登录 (returns JWT)                   |
+| Method | Path                      | Description / 说明                       |
+| ------ | ------------------------- | ---------------------------------------- |
+| GET    | `/api/posts`              | Article list (?page=&size=&tag=&q=)      |
+| GET    | `/api/posts/{slug}`       | Article detail + nested comments + likes |
+| GET    | `/api/tags`               | All tags                                 |
+| GET    | `/api/users/{username}`   | User profile + published posts           |
+| POST   | `/api/auth/register`      | Register                                 |
+| POST   | `/api/auth/login`         | Login → JWT                              |
 
 ### Authenticated / 需登录
 
-| Method | Path                       | Description / 说明                         |
-| ------ | -------------------------- | ------------------------------------------ |
-| GET    | `/api/auth/me`             | Current user info 当前用户信息               |
-| PUT    | `/api/auth/me`             | Update profile 更新资料 (avatar, bio, github) |
-| GET    | `/api/admin/posts`         | My articles 我的文章 (paginated)             |
-| POST   | `/api/admin/posts`         | Create article 创建文章                      |
-| GET    | `/api/admin/posts/{id}`    | Get for editing 获取文章用于编辑             |
-| PUT    | `/api/admin/posts/{id}`    | Update 更新 (author or admin)               |
-| DELETE | `/api/admin/posts/{id}`    | Delete 删除 (author or admin)               |
-| POST   | `/api/comments`            | Post comment 发表评论                        |
-| POST   | `/api/likes/{post_id}`     | Like 点赞                                   |
-| DELETE | `/api/likes/{post_id}`     | Unlike 取消点赞                              |
+| Method | Path                       | Description / 说明                |
+| ------ | -------------------------- | --------------------------------- |
+| GET    | `/api/auth/me`             | Current user info                 |
+| PUT    | `/api/auth/me`             | Update avatar, bio, github_url    |
+| PUT    | `/api/auth/password`       | Change password                   |
+| GET    | `/api/admin/posts`         | My articles (paginated)           |
+| POST   | `/api/admin/posts`         | Create article                    |
+| GET    | `/api/admin/posts/{id}`    | Get for editing (author or admin) |
+| PUT    | `/api/admin/posts/{id}`    | Update (author or admin)          |
+| DELETE | `/api/admin/posts/{id}`    | Delete (author or admin)          |
+| POST   | `/api/comments`            | Post comment (or reply)           |
+| POST   | `/api/likes/{post_id}`     | Like (idempotent)                 |
+| DELETE | `/api/likes/{post_id}`     | Unlike                            |
 
 ## Project Structure / 项目结构
 
 ```
 blog-project/
 ├── backend/
-│   ├── main.py          # FastAPI app & routes 应用和路由
-│   ├── models.py        # SQLAlchemy ORM models 数据模型
-│   ├── schemas.py       # Pydantic request/response schemas 请求响应模型
-│   ├── crud.py          # Database CRUD functions 数据库操作
-│   ├── auth.py          # JWT & password utilities 认证工具
-│   ├── database.py      # SQLAlchemy engine & session 数据库引擎
-│   └── seed.py          # Test data seeder 测试数据种子
-└── frontend/
-    └── src/
-        ├── App.vue           # Navbar, theme toggle, search 导航/主题/搜索
-        ├── style.css         # Global CSS variables & themes 全局样式
-        ├── router/index.js   # Vue Router config 路由配置
-        ├── stores/auth.js    # Pinia auth store 认证状态
-        ├── api/              # Axios client & API modules 接口模块
-        │   ├── client.js     # Axios instance, auth interceptor
-        │   ├── auth.js       # Login, register, profile
-        │   ├── post.js       # Post CRUD
-        │   ├── comment.js    # Comment creation
-        │   ├── like.js       # Like/unlike
-        │   └── user.js       # User profile
-        └── views/            # Page components 页面组件
-            ├── HomeView.vue         # Article list 文章列表
-            ├── PostDetailView.vue   # Article detail 文章详情
-            ├── LoginView.vue        # Login 登录
-            ├── RegisterView.vue     # Register 注册
-            ├── AdminDashboard.vue   # My articles 我的文章
-            ├── AdminPostEdit.vue    # Markdown editor 编辑器
-            ├── UserProfile.vue      # User profile 用户主页
-            ├── ProfileEdit.vue      # Edit profile 编辑资料
-            └── NotFoundView.vue     # 404 page
+│   ├── main.py          # FastAPI app, routes, middleware
+│   ├── models.py        # SQLAlchemy ORM (User, Post, Tag, Comment, likes)
+│   ├── schemas.py       # Pydantic request/response schemas
+│   ├── crud.py          # Database CRUD + build_comment_tree()
+│   ├── auth.py          # JWT, bcrypt, get_current_user, get_optional_user
+│   ├── database.py      # SQLAlchemy engine & session (PostgreSQL)
+│   ├── seed.py          # Idempotent test data seeder
+│   └── requirements.txt # Direct deps only
+├── frontend/src/
+│   ├── App.vue          # Navbar, theme, hamburger, global components
+│   ├── style.css        # 26 CSS variables, light/dark theme
+│   ├── router/index.js  # 10 routes, lazy-load, auth guard, scrollBehavior
+│   ├── stores/auth.js   # Pinia: user, token, localStorage persistence
+│   ├── api/             # Axios client & API modules
+│   │   ├── client.js    # Axios instance, auth interceptor, 401 redirect
+│   │   ├── auth.js      # register(), login(), getMe(), updateMe()
+│   │   ├── post.js      # Post CRUD + getMyPosts()
+│   │   ├── comment.js   # createComment(postId, content, parentId?)
+│   │   ├── like.js      # likePost(), unlikePost()
+│   │   └── user.js      # getUserProfile()
+│   ├── components/      # Shared components
+│   │   ├── AppToast.vue       # Toast notification display
+│   │   ├── BackToTop.vue      # Floating back-to-top button
+│   │   ├── CommentItem.vue    # Recursive nested comment rendering
+│   │   └── ConfirmDialog.vue  # Modal confirmation dialog
+│   ├── composables/     # Module-level reactive state
+│   │   ├── toast.js     # showToast.success/error/info()
+│   │   └── confirm.js   # showConfirm(msg) → Promise<boolean>
+│   └── views/           # Page components (lazy-loaded)
+│       ├── HomeView.vue         # Article list + search + tag filter
+│       ├── PostDetailView.vue   # Article detail + nested comments + likes
+│       ├── LoginView.vue        # Login form
+│       ├── RegisterView.vue     # Registration form
+│       ├── AdminDashboard.vue   # My articles table
+│       ├── AdminPostEdit.vue    # Markdown editor (textarea + live preview)
+│       ├── UserProfile.vue      # User info + their published posts
+│       ├── ProfileEdit.vue      # Edit avatar, bio, github_url
+│       └── NotFoundView.vue     # 404 page
+├── docker-compose.yml  # PostgreSQL 16 + backend + frontend
+├── .env.example        # Environment variable template
+└── TODO.md             # Priority-sorted feature backlog
 ```
 
 ## Features / 功能
 
-| Feature 功能                  | Description 说明                              |
-| ----------------------------- | --------------------------------------------- |
-| Article CRUD 文章管理          | Markdown rendering (highlight.js) 代码高亮     |
-| Tag filtering 标签筛选         | Click to filter by tag 点击标签筛选            |
-| Full-text search 全文搜索      | Searches title + content 搜索标题和正文         |
-| Comment system 评论系统        | Logged-in users can comment 登录后可评论        |
-| Likes 点赞                    | Like/unlike posts 点赞/取消点赞                 |
-| User profiles 用户主页         | Avatar, bio, GitHub link 头像/简介/GitHub      |
-| Profile editing 个人资料       | Edit avatar, bio, github 编辑头像/简介/GitHub  |
-| Admin dashboard 后台管理       | Personal article management 个人文章管理        |
-| Admin permission 管理员权限    | Admins can manage all posts 管理员可管理所有文章 |
-| JWT authentication JWT 认证   | 24h expiry, bcrypt hashing                    |
-| Responsive layout 响应式布局   | Hamburger menu on mobile 移动端汉堡菜单          |
-| Dark mode 暗色模式             | Auto-detects system preference 自动检测系统偏好  |
-| Skeleton loading 骨架屏加载    | Shimmer animations 闪烁动画                    |
-| Rate limiting 速率限制         | Auth and write endpoints 认证和写入接口          |
-| HTML sanitization HTML 过滤   | Bleach whitelist-based 基于白名单过滤            |
+| Feature / 功能                | Description / 说明                          |
+| ----------------------------- | ------------------------------------------- |
+| Article CRUD / 文章管理        | Markdown rendering (highlight.js)           |
+| Nested comments / 评论嵌套回复  | Multi-level threaded replies (楼中楼)        |
+| Likes / 点赞                   | Idempotent like/unlike, persists across visits |
+| Tag filtering / 标签筛选       | Click to filter by tag                      |
+| Full-text search / 全文搜索     | Searches title + content                    |
+| User profiles / 用户主页        | Avatar, bio, GitHub link                    |
+| Profile editing / 编辑资料      | Avatar, bio, GitHub, password change        |
+| Admin dashboard / 后台管理      | Personal article management                 |
+| JWT auth / JWT 认证             | 24h expiry, bcrypt hashing                  |
+| Toast notifications / 消息提示  | Success/error toast (replaces alert)         |
+| Confirm dialog / 确认弹窗       | Modal confirm (replaces confirm)             |
+| Back to top / 回到顶部          | Floating button with smooth scroll           |
+| Responsive layout / 响应式      | Hamburger menu at ≤640px                    |
+| Dark mode / 暗色模式            | Toggle + auto-detect system preference       |
+| Skeleton loading / 骨架屏       | Shimmer animations on all data views         |
+| Rate limiting / 速率限制        | Auth and write endpoints (slowapi)           |
+| HTML sanitization / HTML 过滤   | Bleach whitelist-based filtering            |
+| Docker deploy / 容器化部署      | Multi-service docker-compose                 |
