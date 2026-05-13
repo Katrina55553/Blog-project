@@ -1,8 +1,13 @@
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { marked } from "marked";
+import { Editor } from "@bytemd/vue-next";
+import gfm from "@bytemd/plugin-gfm";
+import highlight from "@bytemd/plugin-highlight";
+import zhHans from "bytemd/locales/zh_Hans.json";
 import { createPost, updatePost, getPostById } from "../api/post";
+import "bytemd/dist/index.css";
+import "highlight.js/styles/github.css";
 
 const route = useRoute();
 const router = useRouter();
@@ -19,10 +24,11 @@ const loading = ref(false);
 const saving = ref(false);
 const error = ref("");
 
-const preview = computed(() => {
-  if (!content.value) return "";
-  return marked(content.value);
-});
+const plugins = [gfm(), highlight()];
+
+const handleChange = (v) => {
+  content.value = v;
+};
 
 function autoSlug() {
   if (!isEdit.value) {
@@ -131,20 +137,14 @@ onMounted(() => {
         <input v-model="summary" type="text" placeholder="简短描述" />
       </label>
 
-      <div class="editor-panes">
-        <div class="pane">
-          <span class="pane-label">Markdown</span>
-          <textarea
-            v-model="content"
-            placeholder="写点东西..."
-            rows="16"
-          ></textarea>
-        </div>
-        <div class="pane">
-          <span class="pane-label">预览</span>
-          <div class="preview" v-html="preview"></div>
-        </div>
-      </div>
+      <Editor
+        :value="content"
+        :plugins="plugins"
+        :locale="zhHans"
+        mode="split"
+        placeholder="写点东西..."
+        @change="handleChange"
+      />
 
       <div class="form-actions">
         <button type="submit" :disabled="saving" class="btn-save">
@@ -157,9 +157,14 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.admin-post-edit { max-width: 900px; margin: 0 auto; }
-h1 { margin-bottom: 1.5rem; color: var(--color-text); }
-.state { text-align: center; padding: 2rem; color: var(--color-text-muted); }
+.admin-post-edit {
+  max-width: 900px;
+  margin: 0 auto;
+}
+h1 {
+  margin-bottom: 1.5rem;
+  color: var(--color-text);
+}
 .error {
   color: var(--color-danger);
   background: var(--color-danger-bg);
@@ -167,7 +172,11 @@ h1 { margin-bottom: 1.5rem; color: var(--color-text); }
   border-radius: var(--radius);
   margin-bottom: 1rem;
 }
-.editor-form { display: flex; flex-direction: column; gap: 1rem; }
+.editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 label span {
   display: block;
   margin-bottom: 0.25rem;
@@ -186,38 +195,6 @@ input, textarea {
   color: var(--color-text);
 }
 textarea { resize: vertical; }
-.editor-panes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-.pane { display: flex; flex-direction: column; }
-.pane-label {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-  margin-bottom: 0.25rem;
-}
-.pane textarea {
-  flex: 1;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-.preview {
-  flex: 1;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius);
-  padding: 0.8rem;
-  overflow-y: auto;
-  line-height: 1.7;
-  font-size: 0.95rem;
-  background: var(--color-bg-secondary);
-  color: var(--color-text);
-}
-.preview :deep(pre) { background: var(--color-pre-bg); padding: 0.8rem; border-radius: var(--radius); overflow-x: auto; }
-.preview :deep(code) { font-size: 0.85rem; }
-.preview :deep(p > code) { background: var(--color-code-bg); padding: 0.1rem 0.3rem; border-radius: 3px; }
-.preview :deep(blockquote) { border-left: 3px solid var(--color-primary); margin-left: 0; padding-left: 0.8rem; color: var(--color-text-secondary); }
 
 .form-actions {
   display: flex;
@@ -237,6 +214,12 @@ textarea { resize: vertical; }
 .btn-save:disabled { opacity: 0.5; }
 .btn-cancel { color: var(--color-text-muted); text-decoration: none; font-size: 0.95rem; }
 .btn-cancel:hover { color: var(--color-text); }
+
+:deep(.bytemd) {
+  height: 600px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
 
 /* Skeleton for edit page */
 .skeleton-edit {
@@ -260,5 +243,159 @@ textarea { resize: vertical; }
   0% { opacity: 0.4; }
   50% { opacity: 0.8; }
   100% { opacity: 0.4; }
+}
+</style>
+
+<style>
+/* ===== ByteMD editor dark mode ===== */
+[data-theme="dark"] .bytemd {
+  --bytemd-bg: #1a1a2e;
+  --bytemd-border: #333355;
+  --bytemd-text: #e0e0e0;
+  --bytemd-text-secondary: #aaaaaa;
+  background: var(--bytemd-bg);
+  border-color: var(--bytemd-border);
+  color: var(--bytemd-text);
+}
+
+[data-theme="dark"] .bytemd-toolbar {
+  background: #16213e;
+  border-bottom-color: #333355;
+}
+
+[data-theme="dark"] .bytemd-toolbar-icon {
+  color: #aaaaaa;
+}
+[data-theme="dark"] .bytemd-toolbar-icon:hover {
+  background: #2a2a44;
+  color: #e0e0e0;
+}
+
+[data-theme="dark"] .bytemd-editor {
+  background: #0d1117;
+}
+
+[data-theme="dark"] .bytemd-preview {
+  background: #1a1a2e;
+  color: #e0e0e0;
+}
+
+[data-theme="dark"] .bytemd-status {
+  background: #16213e;
+  border-top-color: #333355;
+  color: #aaaaaa;
+}
+
+[data-theme="dark"] .bytemd-split .bytemd-split-bar {
+  background: #333355;
+}
+
+[data-theme="dark"] .CodeMirror {
+  background: #0d1117;
+  color: #e0e0e0;
+  border-right-color: #333355;
+}
+
+[data-theme="dark"] .CodeMirror-gutters {
+  background: #0d1117;
+  border-right-color: #333355;
+}
+
+[data-theme="dark"] .CodeMirror-linenumber {
+  color: #555;
+}
+
+[data-theme="dark"] .CodeMirror-cursor {
+  border-left-color: #e0e0e0;
+}
+
+[data-theme="dark"] .CodeMirror-selected {
+  background: rgba(100, 180, 255, 0.15);
+}
+
+[data-theme="dark"] .CodeMirror-activeline-background {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ===== highlight.js dark mode overrides (github-dark colors) ===== */
+[data-theme="dark"] .hljs {
+  color: #c9d1d9;
+  background: #0d1117;
+}
+[data-theme="dark"] .hljs-doctag,
+[data-theme="dark"] .hljs-keyword,
+[data-theme="dark"] .hljs-meta .hljs-keyword,
+[data-theme="dark"] .hljs-template-tag,
+[data-theme="dark"] .hljs-template-variable,
+[data-theme="dark"] .hljs-type,
+[data-theme="dark"] .hljs-variable.language_ {
+  color: #ff7b72;
+}
+[data-theme="dark"] .hljs-title,
+[data-theme="dark"] .hljs-title.class_,
+[data-theme="dark"] .hljs-title.class_.inherited__,
+[data-theme="dark"] .hljs-title.function_ {
+  color: #d2a8ff;
+}
+[data-theme="dark"] .hljs-attr,
+[data-theme="dark"] .hljs-attribute,
+[data-theme="dark"] .hljs-literal,
+[data-theme="dark"] .hljs-meta,
+[data-theme="dark"] .hljs-number,
+[data-theme="dark"] .hljs-operator,
+[data-theme="dark"] .hljs-variable,
+[data-theme="dark"] .hljs-selector-attr,
+[data-theme="dark"] .hljs-selector-class,
+[data-theme="dark"] .hljs-selector-id {
+  color: #79c0ff;
+}
+[data-theme="dark"] .hljs-regexp,
+[data-theme="dark"] .hljs-string,
+[data-theme="dark"] .hljs-meta .hljs-string {
+  color: #a5d6ff;
+}
+[data-theme="dark"] .hljs-built_in,
+[data-theme="dark"] .hljs-symbol {
+  color: #ffa657;
+}
+[data-theme="dark"] .hljs-comment,
+[data-theme="dark"] .hljs-code,
+[data-theme="dark"] .hljs-formula {
+  color: #8b949e;
+}
+[data-theme="dark"] .hljs-name,
+[data-theme="dark"] .hljs-quote,
+[data-theme="dark"] .hljs-selector-tag,
+[data-theme="dark"] .hljs-selector-pseudo {
+  color: #7ee787;
+}
+[data-theme="dark"] .hljs-subst {
+  color: #c9d1d9;
+}
+[data-theme="dark"] .hljs-section {
+  color: #79c0ff;
+}
+[data-theme="dark"] .hljs-bullet {
+  color: #a5d6ff;
+}
+[data-theme="dark"] .hljs-emphasis {
+  color: #c9d1d9;
+  font-style: italic;
+}
+[data-theme="dark"] .hljs-strong {
+  color: #c9d1d9;
+  font-weight: bold;
+}
+[data-theme="dark"] .hljs-addition {
+  color: #7ee787;
+  background: rgba(46, 160, 67, 0.15);
+}
+[data-theme="dark"] .hljs-deletion {
+  color: #ff7b72;
+  background: rgba(248, 81, 73, 0.15);
+}
+[data-theme="dark"] .hljs-link {
+  color: #79c0ff;
+  text-decoration: underline;
 }
 </style>
