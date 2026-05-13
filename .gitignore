@@ -25,5 +25,8 @@ Thumbs.db
 # Docker
 data/
 
+# Claude Code
+.claude/
+
 # Docs
 PRD.txt
