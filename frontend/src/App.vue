@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "./stores/auth";
 import AppToast from "./components/AppToast.vue";
+import BackToTop from "./components/BackToTop.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
 
 const router = useRouter();
@@ -108,6 +109,7 @@ onBeforeUnmount(() => {
   <main class="container">
     <router-view />
   </main>
+  <BackToTop />
   <AppToast />
   <ConfirmDialog />
 </template>
