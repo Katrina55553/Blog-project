@@ -9,6 +9,8 @@ import { createComment } from "../api/comment";
 import { likePost, unlikePost } from "../api/like";
 import { useAuthStore } from "../stores/auth";
 import CommentItem from "../components/CommentItem.vue";
+import { showConfirm } from "../composables/confirm";
+import { showToast } from "../composables/toast";
 
 const route = useRoute();
 const router = useRouter();
@@ -74,12 +76,13 @@ function handleEdit() {
 }
 
 async function handleDelete() {
-  if (!confirm("确定删除这篇文章？")) return;
+  if (!await showConfirm("确定删除这篇文章？")) return;
   try {
     await deletePost(post.value.id);
     router.push("/");
+    showToast.success("删除成功");
   } catch {
-    alert("删除失败");
+    showToast.error("删除失败");
   }
 }
 

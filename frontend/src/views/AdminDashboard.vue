@@ -2,6 +2,8 @@
 import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { getMyPosts, deletePost } from "../api/post";
+import { showConfirm } from "../composables/confirm";
+import { showToast } from "../composables/toast";
 
 const router = useRouter();
 const posts = ref([]);
@@ -32,12 +34,13 @@ function goPage(p) {
 }
 
 async function handleDelete(post) {
-  if (!confirm(`确定删除「${post.title}」？`)) return;
+  if (!await showConfirm(`确定删除「${post.title}」？`)) return;
   try {
     await deletePost(post.id);
     posts.value = posts.value.filter((p) => p.id !== post.id);
+    showToast.success("删除成功");
   } catch {
-    alert("删除失败");
+    showToast.error("删除失败");
   }
 }
 
