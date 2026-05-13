@@ -68,6 +68,7 @@ class PostUpdate(BaseModel):
 class CommentCreate(BaseModel):
     content: str
     post_id: int
+    parent_id: int | None = None
 
 
 class CommentResponse(BaseModel):
@@ -76,7 +77,9 @@ class CommentResponse(BaseModel):
     post_id: int
     user_id: int
     username: str
+    parent_id: int | None = None
     created_at: datetime
+    replies: list["CommentResponse"] = []
 
     model_config = {"from_attributes": True}
 

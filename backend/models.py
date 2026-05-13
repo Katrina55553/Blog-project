@@ -67,10 +67,13 @@ class Comment(Base):
     content = Column(Text, nullable=False)
     post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    parent_id = Column(Integer, ForeignKey("comments.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     post = relationship("Post", back_populates="comments")
     author = relationship("User", back_populates="comments")
+    parent = relationship("Comment", remote_side="Comment.id", back_populates="replies")
+    replies = relationship("Comment", back_populates="parent", cascade="all, delete-orphan")
 
     @property
     def username(self):

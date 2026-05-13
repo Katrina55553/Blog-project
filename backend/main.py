@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from auth import create_access_token, get_current_user, hash_password, verify_password
 from crud import create_user, get_user_by_username
 from crud import (
+    build_comment_tree,
     change_password,
     create_post,
     get_posts,
@@ -31,7 +32,7 @@ from crud import (
     like_post,
     unlike_post,
 )
-from database import Base, engine, get_db
+from database import Base, engine, ensure_schema, get_db
 from models import User, Post, Tag, Comment, post_tags  # noqa: F401
 from schemas import (
     TokenResponse,
@@ -62,7 +63,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    ensure_schema()
     yield
 
 
@@ -189,7 +190,21 @@ def detail_post(slug: str, db: Session = Depends(get_db)):
     post = get_post_by_slug(db, slug)
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
-    return post
+    return {
+        "id": post.id,
+        "title": post.title,
+        "slug": post.slug,
+        "content": post.content,
+        "summary": post.summary,
+        "author": {"id": post.author.id, "username": post.author.username, "avatar": post.author.avatar} if post.author else None,
+        "status": post.status,
+        "created_at": post.created_at,
+        "updated_at": post.updated_at,
+        "tags": [t.name for t in post.tags],
+        "likes_count": len(post.likes),
+        "is_liked": False,
+        "comments": build_comment_tree(post.comments),
+    }
 
 
 # ── Admin post routes ──
@@ -320,7 +335,10 @@ def unlike_route(post_id: int, current_user: User = Depends(get_current_user), d
 def create_comment_route(request: Request, data: CommentCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not get_post_by_id(db, data.post_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
-    return create_comment(db, current_user.id, data.post_id, sanitize(data.content))
+    try:
+        return create_comment(db, current_user.id, data.post_id, sanitize(data.content), data.parent_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 if __name__ == "__main__":

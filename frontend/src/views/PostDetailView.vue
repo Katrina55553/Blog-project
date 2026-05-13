@@ -8,6 +8,7 @@ import { getPostBySlug, deletePost } from "../api/post";
 import { createComment } from "../api/comment";
 import { likePost, unlikePost } from "../api/like";
 import { useAuthStore } from "../stores/auth";
+import CommentItem from "../components/CommentItem.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -95,20 +96,25 @@ async function fetchPost() {
   }
 }
 
-async function handleComment() {
-  if (!commentText.value.trim()) return;
+async function handleComment(parentId = null, content = null) {
+  const text = content || commentText.value;
+  if (!text.trim()) return;
   commentLoading.value = true;
   commentError.value = "";
   try {
-    await createComment(post.value.id, commentText.value);
-    commentText.value = "";
+    await createComment(post.value.id, text, parentId);
+    if (!parentId) commentText.value = "";
     commentError.value = "";
-    await fetchPost(); // refresh to show new comment
+    await fetchPost();
   } catch (e) {
     commentError.value = e.response?.data?.detail || "评论失败";
   } finally {
     commentLoading.value = false;
   }
+}
+
+function handleReplyCreated({ parentId, content }) {
+  handleComment(parentId, content);
 }
 
 onMounted(fetchPost);
@@ -161,7 +167,7 @@ onMounted(fetchPost);
             rows="3"
           ></textarea>
           <div class="comment-actions">
-            <button :disabled="commentLoading" @click="handleComment">
+            <button :disabled="commentLoading" @click="handleComment()">
               {{ commentLoading ? "提交中..." : "发表评论" }}
             </button>
             <span v-if="commentError" class="error">{{ commentError }}</span>
@@ -172,13 +178,13 @@ onMounted(fetchPost);
         </p>
 
         <div v-if="post.comments?.length" class="comment-list">
-          <div v-for="c in post.comments" :key="c.id" class="comment-item">
-            <div class="comment-header">
-              <router-link :to="`/user/${c.username}`" class="comment-author">{{ c.username }}</router-link>
-              <span>{{ new Date(c.created_at).toLocaleDateString() }}</span>
-            </div>
-            <p>{{ c.content }}</p>
-          </div>
+          <CommentItem
+            v-for="c in post.comments"
+            :key="c.id"
+            :comment="c"
+            :auth="auth.user"
+            @reply-created="handleReplyCreated"
+          />
         </div>
         <p v-else class="state">暂无评论</p>
       </section>
@@ -343,18 +349,4 @@ h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--color-text); }
 }
 .comment-actions button:disabled { opacity: 0.5; }
 .comment-list { margin-top: 1rem; }
-.comment-item {
-  padding: 0.8rem 0;
-  border-bottom: 1px solid var(--color-border-light);
-}
-.comment-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.9rem;
-  margin-bottom: 0.3rem;
-}
-.comment-author { color: var(--color-text); text-decoration: none; font-weight: 600; }
-.comment-author:hover { color: var(--color-primary); }
-.comment-header span { color: var(--color-text-muted); font-size: 0.8rem; }
-.comment-item p { margin: 0; font-size: 0.95rem; color: var(--color-text-secondary); }
 </style>

@@ -158,9 +158,40 @@ def unlike_post(db: Session, user_id: int, post_id: int) -> dict:
 
 # ── Comment ──
 
-def create_comment(db: Session, user_id: int, post_id: int, content: str) -> Comment:
-    comment = Comment(content=content, post_id=post_id, user_id=user_id)
+def create_comment(db: Session, user_id: int, post_id: int, content: str, parent_id: int | None = None) -> Comment:
+    if parent_id:
+        parent = db.query(Comment).filter_by(id=parent_id, post_id=post_id).first()
+        if not parent:
+            raise ValueError("Parent comment not found under this post")
+    comment = Comment(content=content, post_id=post_id, user_id=user_id, parent_id=parent_id)
     db.add(comment)
     db.commit()
     db.refresh(comment)
     return comment
+
+
+def build_comment_tree(comments: list[Comment]) -> list[dict]:
+    """Convert flat comment list to nested tree for API response."""
+    lookup = {}
+    roots = []
+    for c in comments:
+        node = {
+            "id": c.id,
+            "content": c.content,
+            "post_id": c.post_id,
+            "user_id": c.user_id,
+            "username": c.username,
+            "parent_id": c.parent_id,
+            "created_at": c.created_at,
+            "replies": [],
+        }
+        lookup[c.id] = node
+
+    for node in lookup.values():
+        pid = node["parent_id"]
+        if pid and pid in lookup:
+            lookup[pid]["replies"].append(node)
+        else:
+            roots.append(node)
+
+    return roots
