@@ -174,6 +174,15 @@ def create_comment(db: Session, user_id: int, post_id: int, content: str, parent
     return comment
 
 
+def get_comment_by_id(db: Session, comment_id: int) -> Comment | None:
+    return db.query(Comment).filter_by(id=comment_id).first()
+
+
+def delete_comment(db: Session, comment: Comment) -> None:
+    db.delete(comment)
+    db.commit()
+
+
 def build_comment_tree(comments: list[Comment]) -> list[dict]:
     """Convert flat comment list to nested tree for API response."""
     lookup = {}

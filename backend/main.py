@@ -29,6 +29,8 @@ from crud import (
     delete_post,
     get_all_tags,
     create_comment,
+    get_comment_by_id,
+    delete_comment,
     like_post,
     unlike_post,
 )
@@ -331,6 +333,11 @@ def unlike_route(post_id: int, current_user: User = Depends(get_current_user), d
 
 # ── Comment routes ──
 
+def _comment_author_or_admin(comment: Comment, user: User):
+    if comment.user_id != user.id and not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your comment")
+
+
 @app.post("/api/comments", response_model=CommentResponse, status_code=201)
 @limiter.limit("10/minute")
 def create_comment_route(request: Request, data: CommentCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -340,6 +347,15 @@ def create_comment_route(request: Request, data: CommentCreate, current_user: Us
         return create_comment(db, current_user.id, data.post_id, sanitize(data.content), data.parent_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@app.delete("/api/comments/{comment_id}", status_code=204)
+def delete_comment_route(comment_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    comment = get_comment_by_id(db, comment_id)
+    if not comment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+    _comment_author_or_admin(comment, current_user)
+    delete_comment(db, comment)
 
 
 if __name__ == "__main__":

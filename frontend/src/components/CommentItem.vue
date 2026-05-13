@@ -1,5 +1,8 @@
 <script setup>
 import { ref } from "vue";
+import { showConfirm } from "../composables/confirm";
+import { showToast } from "../composables/toast";
+import { deleteComment } from "../api/comment";
 
 const props = defineProps({
   comment: { type: Object, required: true },
@@ -7,7 +10,7 @@ const props = defineProps({
   auth: { type: Object, default: null },
 });
 
-const emit = defineEmits(["reply-created"]);
+const emit = defineEmits(["reply-created", "comment-deleted"]);
 
 const showReplyForm = ref(false);
 const replyText = ref("");
@@ -21,6 +24,23 @@ function handleSubmit() {
   replyText.value = "";
   showReplyForm.value = false;
 }
+
+function canDelete() {
+  if (!props.auth) return false;
+  return props.auth.id === props.comment.user_id || props.auth.is_admin;
+}
+
+async function handleDelete() {
+  const ok = await showConfirm("确定删除这条评论吗？");
+  if (!ok) return;
+  try {
+    await deleteComment(props.comment.id);
+    showToast.success("评论已删除");
+    emit("comment-deleted", props.comment.id);
+  } catch (e) {
+    showToast.error(e.response?.data?.detail || "删除失败");
+  }
+}
 </script>
 
 <template>
@@ -31,7 +51,10 @@ function handleSubmit() {
         <span>{{ new Date(comment.created_at).toLocaleDateString() }}</span>
       </div>
       <p class="comment-body">{{ comment.content }}</p>
-      <button v-if="auth" class="btn-reply" @click="showReplyForm = !showReplyForm">回复</button>
+      <div class="comment-actions">
+        <button v-if="auth" class="btn-reply" @click="showReplyForm = !showReplyForm">回复</button>
+        <button v-if="canDelete()" class="btn-delete" @click="handleDelete">删除</button>
+      </div>
 
       <div v-if="showReplyForm" class="reply-form">
         <textarea
@@ -53,6 +76,7 @@ function handleSubmit() {
       :depth="depth + 1"
       :auth="auth"
       @reply-created="emit('reply-created', $event)"
+      @comment-deleted="emit('comment-deleted', $event)"
     />
   </div>
 </template>
@@ -82,6 +106,11 @@ function handleSubmit() {
 .comment-header span { color: var(--color-text-muted); font-size: 0.8rem; }
 .comment-body { margin: 0; font-size: 0.95rem; color: var(--color-text-secondary); }
 
+.comment-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
 .btn-reply {
   background: none;
   border: none;
@@ -89,9 +118,17 @@ function handleSubmit() {
   font-size: 0.8rem;
   cursor: pointer;
   padding: 0.2rem 0;
-  margin-top: 0.3rem;
 }
 .btn-reply:hover { color: var(--color-primary); }
+.btn-delete {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.2rem 0;
+}
+.btn-delete:hover { color: var(--color-danger); }
 
 .reply-form { margin-top: 0.6rem; }
 .reply-form textarea {

@@ -120,6 +120,10 @@ function handleReplyCreated({ parentId, content }) {
   handleComment(parentId, content);
 }
 
+async function handleCommentDeleted() {
+  await fetchPost();
+}
+
 onMounted(fetchPost);
 </script>
 
@@ -187,6 +191,7 @@ onMounted(fetchPost);
             :comment="c"
             :auth="auth.user"
             @reply-created="handleReplyCreated"
+            @comment-deleted="handleCommentDeleted"
           />
         </div>
         <p v-else class="state">暂无评论</p>
