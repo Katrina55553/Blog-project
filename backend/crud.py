@@ -143,8 +143,12 @@ def get_user_profile(db: Session, username: str) -> dict | None:
 # ── Like ──
 
 def like_post(db: Session, user_id: int, post_id: int) -> dict:
-    db.execute(likes.insert().values(user_id=user_id, post_id=post_id))
-    db.commit()
+    from sqlalchemy.exc import IntegrityError
+    try:
+        db.execute(likes.insert().values(user_id=user_id, post_id=post_id))
+        db.commit()
+    except IntegrityError:
+        db.rollback()
     count = db.query(likes).filter_by(post_id=post_id).count()
     return {"liked": True, "likes_count": count}
 

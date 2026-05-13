@@ -53,6 +53,22 @@ def get_current_user(
     return user
 
 
+optional_security = HTTPBearer(auto_error=False)
+
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(optional_security),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Like get_current_user but returns None instead of 401 for unauthenticated requests."""
+    if credentials is None:
+        return None
+    payload = decode_token(credentials.credentials)
+    if payload is None:
+        return None
+    return db.query(User).filter_by(id=int(payload.get("sub"))).first()
+
+
 def require_admin(
     current_user: User = Depends(get_current_user),
 ) -> User:

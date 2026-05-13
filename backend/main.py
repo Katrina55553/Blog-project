@@ -13,7 +13,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy.orm import Session
 
-from auth import create_access_token, get_current_user, hash_password, verify_password
+from auth import create_access_token, get_current_user, get_optional_user, hash_password, verify_password
 from crud import create_user, get_user_by_username
 from crud import (
     build_comment_tree,
@@ -186,10 +186,11 @@ def list_posts(page: int = 1, size: int = 10, tag: str = "", q: str = "", db: Se
 
 
 @app.get("/api/posts/{slug}", response_model=PostDetailResponse)
-def detail_post(slug: str, db: Session = Depends(get_db)):
+def detail_post(slug: str, db: Session = Depends(get_db), current_user: User | None = Depends(get_optional_user)):
     post = get_post_by_slug(db, slug)
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    is_liked = any(u.id == current_user.id for u in post.likes) if current_user else False
     return {
         "id": post.id,
         "title": post.title,
@@ -202,7 +203,7 @@ def detail_post(slug: str, db: Session = Depends(get_db)):
         "updated_at": post.updated_at,
         "tags": [t.name for t in post.tags],
         "likes_count": len(post.likes),
-        "is_liked": False,
+        "is_liked": is_liked,
         "comments": build_comment_tree(post.comments),
     }
 
