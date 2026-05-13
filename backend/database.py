@@ -1,15 +1,12 @@
 import os
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker, DeclarativeBase
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///blog.db")
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://blog:blog@localhost:5432/blog")
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
-)
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -18,18 +15,12 @@ class Base(DeclarativeBase):
 
 
 def ensure_schema():
-    """Add missing columns for existing databases (poor man's migration)."""
+    """Create tables and apply lightweight migrations."""
     Base.metadata.create_all(bind=engine)
-    if DATABASE_URL.startswith("sqlite"):
-        import sqlite3
-        conn = sqlite3.connect(DATABASE_URL.replace("sqlite:///", ""))
-        cur = conn.cursor()
-        cur.execute("PRAGMA table_info(comments)")
-        cols = [row[1] for row in cur.fetchall()]
-        if "parent_id" not in cols:
-            cur.execute("ALTER TABLE comments ADD COLUMN parent_id INTEGER REFERENCES comments(id)")
-        conn.commit()
-        conn.close()
+    with engine.begin() as conn:
+        conn.execute(text(
+            "ALTER TABLE comments ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES comments(id)"
+        ))
 
 
 def get_db() -> Generator[Session, None, None]:

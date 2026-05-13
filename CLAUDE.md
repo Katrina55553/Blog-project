@@ -129,7 +129,9 @@ frontend/src/
 
 ## Database
 
-SQLite for development (file-based, zero config). The README references PostgreSQL for production, but no PostgreSQL setup or migration tooling is implemented yet.
+PostgreSQL for both dev and production. Default connection: `postgresql://blog:blog@localhost:5432/blog`.
+
+**Local PG via Docker:** `docker compose up db -d` starts just the PostgreSQL 16 container. Override via `DATABASE_URL` env var if needed.
 
 - **users**: id, username, password_hash, avatar, bio, github_url, is_admin, created_at
 - **posts**: id, title, slug, content, summary, author_id (FK), status, created_at, updated_at
