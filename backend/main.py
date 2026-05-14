@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import traceback
 from contextlib import asynccontextmanager
 
 import bleach
@@ -102,13 +103,19 @@ async def not_found_handler(request: Request, exc):
 
 @app.exception_handler(500)
 async def server_error_handler(request: Request, exc):
-    logger.error(f"500 on {request.method} {request.url.path}")
+    logger.error(f"500 on {request.method} {request.url.path}: {exc}\n{traceback.format_exc()}")
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc):
     return JSONResponse(status_code=429, content={"detail": "Too many requests"})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error on {request.method} {request.url.path}: {exc}\n{traceback.format_exc()}")
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 # ── Helpers ──
