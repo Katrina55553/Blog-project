@@ -5,13 +5,6 @@ from sqlalchemy.orm import relationship
 
 from database import Base
 
-post_tags = Table(
-    "post_tags",
-    Base.metadata,
-    Column("post_id", Integer, ForeignKey("posts.id"), primary_key=True),
-    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
-)
-
 
 class User(Base):
     __tablename__ = "users"
@@ -23,22 +16,22 @@ class User(Base):
     bio = Column(String, default="")
     github_url = Column(String, default="")
     is_admin = Column(Boolean, default=False)
+    topic_count = Column(Integer, default=0)
+    comment_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    posts = relationship("Post", back_populates="author")
+    topics = relationship("Topic", back_populates="author")
     comments = relationship("Comment", back_populates="author")
 
 
-class Post(Base):
-    __tablename__ = "posts"
+class Topic(Base):
+    __tablename__ = "topics"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
-    slug = Column(String, unique=True, nullable=False, index=True)
     content = Column(Text, default="")
-    summary = Column(String, default="")
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    status = Column(String, default="published")
+    view_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,
@@ -46,18 +39,9 @@ class Post(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    author = relationship("User", back_populates="posts")
-    tags = relationship("Tag", secondary=post_tags, back_populates="posts")
-    comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
-
-
-class Tag(Base):
-    __tablename__ = "tags"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, nullable=False)
-
-    posts = relationship("Post", secondary=post_tags, back_populates="tags")
+    author = relationship("User", back_populates="topics")
+    comments = relationship("Comment", back_populates="topic", cascade="all, delete-orphan")
+    likes = relationship("User", secondary="likes")
 
 
 class Comment(Base):
@@ -65,12 +49,12 @@ class Comment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
-    post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     parent_id = Column(Integer, ForeignKey("comments.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    post = relationship("Post", back_populates="comments")
+    topic = relationship("Topic", back_populates="comments")
     author = relationship("User", back_populates="comments")
     parent = relationship("Comment", remote_side="Comment.id", back_populates="replies")
     replies = relationship("Comment", back_populates="parent", cascade="all, delete-orphan")
@@ -80,13 +64,22 @@ class Comment(Base):
         return self.author.username if self.author else ""
 
 
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    type = Column(String, nullable=False, default="reply")
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=True)
+    comment_id = Column(Integer, ForeignKey("comments.id"), nullable=True)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+# likes table for Topic.likes relationship
 likes = Table(
     "likes",
     Base.metadata,
     Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
-    Column("post_id", Integer, ForeignKey("posts.id"), primary_key=True),
+    Column("topic_id", Integer, ForeignKey("topics.id"), primary_key=True),
 )
-
-# Add likes_count to Post via property
-Post.likes_count = property(lambda self: len(self.likes) if hasattr(self, "likes") else 0)
-Post.likes = relationship("User", secondary=likes)
