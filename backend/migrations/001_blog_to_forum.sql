@@ -1,5 +1,8 @@
 -- 001_blog_to_forum.sql
 -- 将博客数据模型迁移为论坛数据模型
+--
+-- WARNING: 此迁移会清空 likes、post_tags、tags 表数据。
+-- slug/summary/status 列也被删除。仅保留用户账号。
 
 BEGIN;
 
@@ -34,8 +37,8 @@ CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id),
     type VARCHAR NOT NULL DEFAULT 'reply',
-    topic_id INTEGER REFERENCES topics(id),
-    comment_id INTEGER REFERENCES comments(id),
+    topic_id INTEGER REFERENCES topics(id) ON DELETE CASCADE,
+    comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
