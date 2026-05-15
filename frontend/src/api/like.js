@@ -1,9 +1,9 @@
 import client from "./client";
 
-export function likePost(postId) {
-  return client.post(`/likes/${postId}`);
+export function likeTopic(topicId) {
+  return client.post(`/likes/${topicId}`);
 }
 
-export function unlikePost(postId) {
-  return client.delete(`/likes/${postId}`);
+export function unlikeTopic(topicId) {
+  return client.delete(`/likes/${topicId}`);
 }
