@@ -1,5 +1,5 @@
 from database import Base, SessionLocal, engine
-from models import Post, Tag, User
+from models import Topic, User
 from auth import hash_password
 
 
@@ -13,28 +13,16 @@ def seed():
         db.add(admin)
         db.flush()
 
-    tags = {}
-    for name in ["Python", "FastAPI"]:
-        tag = db.query(Tag).filter_by(name=name).first()
-        if not tag:
-            tag = Tag(name=name)
-            db.add(tag)
-            db.flush()
-        tags[name] = tag
-
-    existing = db.query(Post).filter_by(slug="hello-world").first()
+    existing = db.query(Topic).first()
     if not existing:
-        post = Post(
-            title="Hello World",
-            slug="hello-world",
-            content="This is my first blog post. Welcome to my blog!",
-            summary="First post",
+        topic = Topic(
+            title="欢迎来到论坛",
+            content="这是论坛的第一个帖子。欢迎加入社区讨论！\n\n## 论坛规则\n\n- 请保持友善和尊重\n- 支持 Markdown 格式\n- 点击左上角 **发帖** 开始新话题",
             author_id=admin.id,
-            tags=list(tags.values()),
         )
-        db.add(post)
+        db.add(topic)
         db.commit()
-        print("Seed data inserted: admin user + 2 tags + 1 post")
+        print("Seed data inserted: admin user + 1 topic")
     else:
         print("Seed data already exists, skipping")
 

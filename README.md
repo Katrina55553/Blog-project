@@ -1,8 +1,8 @@
-# Blog Project / 博客项目
+# Forum / 论坛系统
 
-A minimalist, high-performance personal technical blog system powered by **Vue 3** + **FastAPI**.
+A minimalist, high-performance community forum powered by **Vue 3** + **FastAPI**.
 
-基于 **Vue 3** + **FastAPI** 的极简高性能个人技术博客系统。
+基于 **Vue 3** + **FastAPI** 的极简高性能社区论坛。
 
 ## Tech Stack / 技术栈
 
@@ -61,55 +61,60 @@ python seed.py                 # admin / admin123
 
 ### Public / 公开
 
-| Method | Path                      | Description / 说明                       |
-| ------ | ------------------------- | ---------------------------------------- |
-| GET    | `/api/posts`              | Article list (?page=&size=&tag=&q=)      |
-| GET    | `/api/posts/{slug}`       | Article detail + nested comments + likes |
-| GET    | `/api/tags`               | All tags                                 |
-| GET    | `/api/users/{username}`   | User profile + published posts           |
-| POST   | `/api/auth/register`      | Register                                 |
-| POST   | `/api/auth/login`         | Login → JWT                              |
+| Method | Path                      | Description / 说明                    |
+| ------ | ------------------------- | ------------------------------------- |
+| GET    | `/api/topics`             | Topic list (?page=&size=&q=)          |
+| GET    | `/api/topics/{id}`        | Topic detail + nested comments + likes |
+| GET    | `/api/users/{username}`   | User profile + their topics           |
+| POST   | `/api/auth/register`      | Register                              |
+| POST   | `/api/auth/login`         | Login → JWT                           |
 
 ### Authenticated / 需登录
 
-| Method | Path                       | Description / 说明                |
-| ------ | -------------------------- | --------------------------------- |
-| GET    | `/api/auth/me`             | Current user info                 |
-| PUT    | `/api/auth/me`             | Update avatar, bio, github_url    |
-| PUT    | `/api/auth/password`       | Change password                   |
-| GET    | `/api/admin/posts`         | My articles (paginated)           |
-| POST   | `/api/admin/posts`         | Create article                    |
-| GET    | `/api/admin/posts/{id}`    | Get for editing (author or admin) |
-| PUT    | `/api/admin/posts/{id}`    | Update (author or admin)          |
-| DELETE | `/api/admin/posts/{id}`    | Delete (author or admin)          |
-| POST   | `/api/comments`            | Post comment (or reply)           |
-| POST   | `/api/likes/{post_id}`     | Like (idempotent)                 |
-| DELETE | `/api/likes/{post_id}`     | Unlike                            |
+| Method | Path                          | Description / 说明             |
+| ------ | ----------------------------- | ------------------------------ |
+| GET    | `/api/auth/me`                | Current user info              |
+| PUT    | `/api/auth/me`                | Update avatar, bio, github_url |
+| PUT    | `/api/auth/password`          | Change password                |
+| GET    | `/api/topics/{id}/edit`       | Get topic for editing          |
+| POST   | `/api/topics`                 | Create topic                   |
+| PUT    | `/api/topics/{id}`            | Update topic (author/admin)    |
+| DELETE | `/api/topics/{id}`            | Delete topic (author/admin)    |
+| POST   | `/api/comments`               | Post comment (or reply)        |
+| DELETE | `/api/comments/{id}`          | Delete comment (author/admin)  |
+| POST   | `/api/likes/{topic_id}`       | Like (idempotent)              |
+| DELETE | `/api/likes/{topic_id}`       | Unlike                         |
+| GET    | `/api/notifications`          | Notification list              |
+| GET    | `/api/notifications/unread-count` | Unread count              |
+| PUT    | `/api/notifications/{id}/read` | Mark as read                  |
+| PUT    | `/api/notifications/read-all` | Mark all read                  |
 
 ## Project Structure / 项目结构
 
 ```
-blog-project/
+forum/
 ├── backend/
 │   ├── main.py          # FastAPI app, routes, middleware
-│   ├── models.py        # SQLAlchemy ORM (User, Post, Tag, Comment, likes)
+│   ├── models.py        # SQLAlchemy ORM (User, Topic, Comment, Notification, likes)
 │   ├── schemas.py       # Pydantic request/response schemas
 │   ├── crud.py          # Database CRUD + build_comment_tree()
 │   ├── auth.py          # JWT, bcrypt, get_current_user, get_optional_user
 │   ├── database.py      # SQLAlchemy engine & session (PostgreSQL)
+│   ├── migrations/      # SQL migration scripts
 │   ├── seed.py          # Idempotent test data seeder
 │   └── requirements.txt # Direct deps only
 ├── frontend/src/
-│   ├── App.vue          # Navbar, theme, hamburger, global components
+│   ├── App.vue          # Navbar, notification bell, theme, hamburger, global components
 │   ├── style.css        # 26 CSS variables, light/dark theme
 │   ├── router/index.js  # 10 routes, lazy-load, auth guard, scrollBehavior
 │   ├── stores/auth.js   # Pinia: user, token, localStorage persistence
 │   ├── api/             # Axios client & API modules
 │   │   ├── client.js    # Axios instance, auth interceptor, 401 redirect
 │   │   ├── auth.js      # register(), login(), getMe(), updateMe()
-│   │   ├── post.js      # Post CRUD + getMyPosts()
-│   │   ├── comment.js   # createComment(postId, content, parentId?)
-│   │   ├── like.js      # likePost(), unlikePost()
+│   │   ├── topic.js     # Topic CRUD functions
+│   │   ├── comment.js   # createComment(), deleteComment()
+│   │   ├── like.js      # likeTopic(), unlikeTopic()
+│   │   ├── notification.js # Notification API
 │   │   └── user.js      # getUserProfile()
 │   ├── components/      # Shared components
 │   │   ├── AppToast.vue       # Toast notification display
@@ -120,35 +125,34 @@ blog-project/
 │   │   ├── toast.js     # showToast.success/error/info()
 │   │   └── confirm.js   # showConfirm(msg) → Promise<boolean>
 │   └── views/           # Page components (lazy-loaded)
-│       ├── HomeView.vue         # Article list + search + tag filter
-│       ├── PostDetailView.vue   # Article detail + nested comments + likes
+│       ├── HomeView.vue         # Topic list + search + pagination
+│       ├── TopicDetailView.vue   # Topic detail + nested comments + likes
+│       ├── TopicEditView.vue    # Markdown editor (textarea + live preview)
+│       ├── NotificationsView.vue # Notification list with read/unread states
 │       ├── LoginView.vue        # Login form
 │       ├── RegisterView.vue     # Registration form
-│       ├── AdminDashboard.vue   # My articles table
-│       ├── AdminPostEdit.vue    # Markdown editor (textarea + live preview)
-│       ├── UserProfile.vue      # User info + their published posts
+│       ├── UserProfile.vue      # User info + their topics
 │       ├── ProfileEdit.vue      # Edit avatar, bio, github_url
 │       └── NotFoundView.vue     # 404 page
+├── docs/superpowers/   # Design specs & implementation plans
 ├── docker-compose.yml  # PostgreSQL 16 + backend + frontend
-├── .env.example        # Environment variable template
-└── TODO.md             # Priority-sorted feature backlog
+└── .env.example        # Environment variable template
 ```
 
 ## Features / 功能
 
 | Feature / 功能                | Description / 说明                          |
 | ----------------------------- | ------------------------------------------- |
-| Article CRUD / 文章管理        | Markdown rendering (highlight.js)           |
+| Topic CRUD / 帖子管理           | Markdown rendering (highlight.js)           |
 | Nested comments / 评论嵌套回复  | Multi-level threaded replies (楼中楼)        |
-| Likes / 点赞                   | Idempotent like/unlike, persists across visits |
-| Tag filtering / 标签筛选       | Click to filter by tag                      |
+| Likes / 点赞                   | Idempotent like/unlike                      |
 | Full-text search / 全文搜索     | Searches title + content                    |
-| User profiles / 用户主页        | Avatar, bio, GitHub link                    |
+| Notifications / 通知提醒        | Reply notifications with unread badge       |
+| User profiles / 用户主页        | Avatar, bio, topic/comment counts           |
 | Profile editing / 编辑资料      | Avatar, bio, GitHub, password change        |
-| Admin dashboard / 后台管理      | Personal article management                 |
 | JWT auth / JWT 认证             | 24h expiry, bcrypt hashing                  |
-| Toast notifications / 消息提示  | Success/error toast (replaces alert)         |
-| Confirm dialog / 确认弹窗       | Modal confirm (replaces confirm)             |
+| Toast notifications / 消息提示  | Success/error toast                         |
+| Confirm dialog / 确认弹窗       | Modal confirm for destructive actions       |
 | Back to top / 回到顶部          | Floating button with smooth scroll           |
 | Responsive layout / 响应式      | Hamburger menu at ≤640px                    |
 | Dark mode / 暗色模式            | Toggle + auto-detect system preference       |
