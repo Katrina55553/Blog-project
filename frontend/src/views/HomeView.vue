@@ -1,16 +1,15 @@
 <script setup>
 import { ref, onMounted, watch, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { getPosts } from "../api/post";
+import { getTopics } from "../api/topic";
 
 const route = useRoute();
 const router = useRouter();
 
-const posts = ref([]);
+const topics = ref([]);
 const total = ref(0);
 const pages = ref(0);
 const page = ref(1);
-const tag = ref("");
 const searchInput = ref(route.query.q || "");
 const loading = ref(true);
 const error = ref("");
@@ -18,12 +17,12 @@ const error = ref("");
 const q = computed(() => route.query.q || "");
 const size = 10;
 
-async function fetchPosts() {
+async function fetchTopics() {
   loading.value = true;
   error.value = "";
   try {
-    const res = await getPosts(page.value, size, tag.value, q.value);
-    posts.value = res.data.items;
+    const res = await getTopics(page.value, size, q.value);
+    topics.value = res.data.items;
     total.value = res.data.total;
     pages.value = res.data.pages;
   } catch {
@@ -37,14 +36,9 @@ function goPage(p) {
   page.value = p;
 }
 
-function selectTag(t) {
-  tag.value = tag.value === t ? "" : t;
-}
-
 function doSearch() {
   const val = searchInput.value.trim();
   page.value = 1;
-  tag.value = "";
   if (val) {
     router.push({ name: "home", query: { q: val } });
   } else {
@@ -52,67 +46,65 @@ function doSearch() {
   }
 }
 
-onMounted(fetchPosts);
-watch(page, fetchPosts);
-watch(tag, () => {
-  page.value = 1;
-  fetchPosts();
-});
+function formatTime(t) {
+  if (!t) return "";
+  const diff = Date.now() - new Date(t).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "刚刚";
+  if (mins < 60) return `${mins}分钟前`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}小时前`;
+  return new Date(t).toLocaleDateString();
+}
+
+onMounted(fetchTopics);
+watch(page, fetchTopics);
 watch(q, () => {
   page.value = 1;
-  tag.value = "";
-  fetchPosts();
+  fetchTopics();
 });
 </script>
 
 <template>
   <div class="home">
     <form class="search-bar" @submit.prevent="doSearch">
-      <input v-model="searchInput" type="search" placeholder="搜索文章..." class="search-input" />
+      <input v-model="searchInput" type="search" placeholder="搜索帖子..." class="search-input" />
     </form>
 
     <h1 v-if="q">搜索: "{{ q }}"</h1>
-    <h1 v-else>文章列表</h1>
+    <h1 v-else>最新帖子</h1>
 
     <p v-if="q && !loading" class="search-info">
-      找到 {{ total }} 篇文章
+      找到 {{ total }} 个帖子
       <router-link to="/" class="btn-clear">清除搜索</router-link>
     </p>
 
     <div v-if="loading" class="skeleton-list">
-      <div v-for="n in 3" :key="n" class="skeleton-card">
-        <div class="skeleton-line w-60"></div>
-        <div class="skeleton-line w-90"></div>
+      <div v-for="n in 5" :key="n" class="skeleton-row">
+        <div class="skeleton-line w-70"></div>
         <div class="skeleton-line w-40"></div>
       </div>
     </div>
     <div v-else-if="error" class="state error">
       <p>{{ error }}</p>
-      <button class="btn-retry" @click="fetchPosts">重试</button>
+      <button class="btn-retry" @click="fetchTopics">重试</button>
     </div>
-    <div v-else-if="posts.length === 0" class="state">暂无文章</div>
+    <div v-else-if="topics.length === 0" class="state">暂无帖子</div>
 
-    <div v-else class="posts">
-      <article v-for="post in posts" :key="post.id" class="card">
-        <router-link :to="`/post/${post.slug}`" class="card-link" :aria-label="post.title"></router-link>
-        <h2 class="title">{{ post.title }}</h2>
-        <p class="summary">{{ post.summary }}</p>
-        <div class="meta">
-          <router-link :to="`/user/${post.author?.username}`" class="author" @click.stop>{{ post.author?.username }}</router-link>
-          <span class="date">{{ new Date(post.created_at).toLocaleDateString() }}</span>
-          <span v-if="post.tags?.length" class="tags">
-            <button
-              v-for="t in post.tags"
-              :key="t"
-              class="tag"
-              :class="{ active: tag === t }"
-              @click.prevent.stop="selectTag(t)"
-            >
-              {{ t }}
-            </button>
-          </span>
+    <div v-else class="topic-list">
+      <div v-for="t in topics" :key="t.id" class="topic-row">
+        <div class="topic-main">
+          <router-link :to="`/topic/${t.id}`" class="topic-title">{{ t.title }}</router-link>
+          <div class="topic-meta">
+            <router-link :to="`/user/${t.author?.username}`" class="author">{{ t.author?.username }}</router-link>
+            <span>{{ formatTime(t.created_at) }}</span>
+          </div>
         </div>
-      </article>
+        <div class="topic-stats">
+          <span title="回复">💬 {{ t.comment_count }}</span>
+          <span title="点赞">❤️ {{ t.likes_count }}</span>
+        </div>
+      </div>
 
       <div v-if="pages > 1" class="pagination">
         <button :disabled="page <= 1" @click="goPage(page - 1)">上一页</button>
@@ -129,7 +121,6 @@ watch(q, () => {
 .home { max-width: 700px; margin: 0 auto; }
 h1 { margin-bottom: 0.5rem; color: var(--color-text); }
 
-/* Search bar */
 .search-bar { margin-bottom: 1.5rem; }
 .search-input {
   width: 100%;
@@ -178,16 +169,15 @@ h1 { margin-bottom: 0.5rem; color: var(--color-text); }
 }
 .btn-retry:hover { border-color: var(--color-primary); color: var(--color-primary); }
 
-/* Skeleton */
-.skeleton-list { display: flex; flex-direction: column; gap: 0.8rem; }
-.skeleton-card {
-  padding: 1.4rem;
+.skeleton-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.skeleton-row {
+  padding: 1rem 1.4rem;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 .skeleton-line {
   height: 14px;
@@ -195,64 +185,55 @@ h1 { margin-bottom: 0.5rem; color: var(--color-text); }
   border-radius: 4px;
   animation: shimmer 1.5s infinite;
 }
-.skeleton-line.w-60 { width: 60%; }
-.skeleton-line.w-90 { width: 90%; }
+.skeleton-line.w-70 { width: 70%; }
 .skeleton-line.w-40 { width: 40%; }
 @keyframes shimmer {
   0% { opacity: 0.4; }
   50% { opacity: 0.8; }
   100% { opacity: 0.4; }
 }
-.card {
-  position: relative;
-  padding: 1.4rem;
-  margin-bottom: 0.8rem;
+
+.topic-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.4rem;
+  margin-bottom: 0.5rem;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius);
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s;
 }
-.card:hover {
-  background: var(--color-card-hover);
-  box-shadow: var(--shadow-sm);
-}
-.card-link {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-.title {
-  font-size: 1.2rem;
+.topic-row:hover { background: var(--color-card-hover); }
+.topic-main { flex: 1; min-width: 0; }
+.topic-title {
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--color-text);
-  margin: 0 0 0.4rem 0;
+  text-decoration: none;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.card:hover .title { color: var(--color-primary); }
-.summary {
-  margin: 0.4rem 0;
-  color: var(--color-text-secondary);
-  font-size: 0.95rem;
-}
-.meta {
+.topic-title:hover { color: var(--color-primary); }
+.topic-meta {
   display: flex;
-  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: 0.3rem;
+}
+.author { color: var(--color-text-muted); text-decoration: none; }
+.author:hover { color: var(--color-primary); }
+.topic-stats {
+  display: flex;
   gap: 0.8rem;
   font-size: 0.85rem;
   color: var(--color-text-muted);
+  flex-shrink: 0;
+  margin-left: 1rem;
 }
-.author { color: var(--color-text-muted); text-decoration: none; position: relative; z-index: 2; }
-.author:hover { color: var(--color-primary); }
-.tags { display: flex; gap: 0.3rem; position: relative; z-index: 2; }
-.tag {
-  background: var(--color-tag-bg);
-  border: none;
-  padding: 0.15rem 0.5rem;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  color: var(--color-tag-text);
-}
-.tag.active { background: var(--color-primary); color: #fff; }
 .pagination {
   display: flex;
   justify-content: center;

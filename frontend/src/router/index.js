@@ -8,10 +8,28 @@ const routes = [
     meta: { title: "首页" },
   },
   {
-    path: "/post/:slug",
-    name: "post-detail",
-    component: () => import("../views/PostDetailView.vue"),
-    meta: { title: "文章" },
+    path: "/topic/new",
+    name: "topic-new",
+    component: () => import("../views/TopicEditView.vue"),
+    meta: { requiresAuth: true, title: "发帖" },
+  },
+  {
+    path: "/topic/:id",
+    name: "topic-detail",
+    component: () => import("../views/TopicDetailView.vue"),
+    meta: { title: "帖子" },
+  },
+  {
+    path: "/topic/:id/edit",
+    name: "topic-edit",
+    component: () => import("../views/TopicEditView.vue"),
+    meta: { requiresAuth: true, title: "编辑" },
+  },
+  {
+    path: "/notifications",
+    name: "notifications",
+    component: () => import("../views/NotificationsView.vue"),
+    meta: { requiresAuth: true, title: "通知" },
   },
   {
     path: "/login",
@@ -24,24 +42,6 @@ const routes = [
     name: "register",
     component: () => import("../views/RegisterView.vue"),
     meta: { title: "注册" },
-  },
-  {
-    path: "/admin",
-    name: "admin-dashboard",
-    component: () => import("../views/AdminDashboard.vue"),
-    meta: { requiresAuth: true, title: "后台管理" },
-  },
-  {
-    path: "/admin/posts/new",
-    name: "admin-post-new",
-    component: () => import("../views/AdminPostEdit.vue"),
-    meta: { requiresAuth: true, title: "写文章" },
-  },
-  {
-    path: "/admin/posts/:id/edit",
-    name: "admin-post-edit",
-    component: () => import("../views/AdminPostEdit.vue"),
-    meta: { requiresAuth: true, title: "编辑文章" },
   },
   {
     path: "/profile/edit",
@@ -79,7 +79,7 @@ router.beforeEach((to) => {
 });
 
 router.afterEach((to) => {
-  document.title = to.meta.title ? `${to.meta.title} - My Blog` : "My Blog";
+  document.title = to.meta.title ? `${to.meta.title} - Forum` : "Forum";
 });
 
 export default router;

@@ -2,6 +2,7 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "./stores/auth";
+import { getUnreadCount } from "./api/notification";
 import AppToast from "./components/AppToast.vue";
 import BackToTop from "./components/BackToTop.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
@@ -14,6 +15,9 @@ const menuOpen = ref(false);
 const navRef = ref(null);
 const userMenuOpen = ref(false);
 const userMenuRef = ref(null);
+const unreadCount = ref(0);
+
+let notifTimer = null;
 
 function onDocClick(e) {
   if (menuOpen.value && navRef.value && !navRef.value.contains(e.target)) {
@@ -51,6 +55,11 @@ function goProfile() {
   router.push("/profile/edit");
 }
 
+function goNotifications() {
+  userMenuOpen.value = false;
+  router.push("/notifications");
+}
+
 function logout() {
   auth.logout();
   closeMenu();
@@ -58,20 +67,34 @@ function logout() {
   router.push("/");
 }
 
+async function fetchUnreadCount() {
+  try {
+    const res = await getUnreadCount();
+    unreadCount.value = res.data.count;
+  } catch {
+    // ignore
+  }
+}
+
 onMounted(() => {
   initTheme();
   auth.restoreUser();
   document.addEventListener("click", onDocClick);
+  if (auth.user) {
+    fetchUnreadCount();
+    notifTimer = setInterval(fetchUnreadCount, 30000);
+  }
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", onDocClick);
+  if (notifTimer) clearInterval(notifTimer);
 });
 </script>
 
 <template>
   <header class="navbar">
-    <router-link to="/" class="brand" @click="closeMenu">My Blog</router-link>
+    <router-link to="/" class="brand" @click="closeMenu">Forum</router-link>
 
     <button class="hamburger" @click="menuOpen = !menuOpen" :aria-label="menuOpen ? '关闭菜单' : '打开菜单'">
       <span></span><span></span><span></span>
@@ -81,13 +104,18 @@ onBeforeUnmount(() => {
       <router-link to="/" @click="closeMenu">首页</router-link>
 
       <template v-if="auth.user">
-        <router-link to="/admin" @click="closeMenu">后台</router-link>
-        <router-link to="/admin/posts/new" @click="closeMenu">写文章</router-link>
+        <router-link to="/topic/new" @click="closeMenu">发帖</router-link>
       </template>
       <template v-else>
         <router-link to="/login" @click="closeMenu">登录</router-link>
         <router-link to="/register" @click="closeMenu">注册</router-link>
       </template>
+
+      <!-- Notification bell -->
+      <router-link v-if="auth.user" to="/notifications" class="notif-bell" :aria-label="'通知'">
+        &#128276;
+        <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      </router-link>
 
       <!-- User avatar + dropdown -->
       <div v-if="auth.user" ref="userMenuRef" class="user-menu">
@@ -96,6 +124,7 @@ onBeforeUnmount(() => {
           <span v-else class="avatar-text">{{ userInitial() }}</span>
         </button>
         <div v-if="userMenuOpen" class="dropdown">
+          <button class="dropdown-item" @click="goNotifications">通知</button>
           <button class="dropdown-item" @click="goProfile">编辑信息</button>
           <button class="dropdown-item logout" @click="logout">退出账号</button>
         </div>
@@ -178,6 +207,39 @@ nav > a {
   white-space: nowrap;
 }
 nav > a:hover { color: var(--color-text); }
+
+/* Notification bell */
+.notif-bell {
+  position: relative;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.notif-bell:hover { border-color: var(--color-text); }
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
 
 /* GitHub link */
 .github-link {

@@ -4,9 +4,9 @@ import { useRoute, useRouter } from "vue-router";
 import { marked } from "marked";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
-import { getPostBySlug, deletePost } from "../api/post";
+import { getTopicById, deleteTopic } from "../api/topic";
 import { createComment } from "../api/comment";
-import { likePost, unlikePost } from "../api/like";
+import { likeTopic, unlikeTopic } from "../api/like";
 import { useAuthStore } from "../stores/auth";
 import CommentItem from "../components/CommentItem.vue";
 import { showConfirm } from "../composables/confirm";
@@ -16,7 +16,7 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 
-const post = ref(null);
+const topic = ref(null);
 const loading = ref(true);
 const error = ref("");
 
@@ -27,7 +27,7 @@ const commentError = ref("");
 const likeLoading = ref(false);
 
 function isLiked() {
-  return post.value?.is_liked || false;
+  return topic.value?.is_liked || false;
 }
 
 async function handleLike() {
@@ -38,16 +38,16 @@ async function handleLike() {
   likeLoading.value = true;
   try {
     if (isLiked()) {
-      const res = await unlikePost(post.value.id);
-      post.value.likes_count = res.data.likes_count;
-      post.value.is_liked = false;
+      const res = await unlikeTopic(topic.value.id);
+      topic.value.likes_count = res.data.likes_count;
+      topic.value.is_liked = false;
     } else {
-      const res = await likePost(post.value.id);
-      post.value.likes_count = res.data.likes_count;
-      post.value.is_liked = true;
+      const res = await likeTopic(topic.value.id);
+      topic.value.likes_count = res.data.likes_count;
+      topic.value.is_liked = true;
     }
   } catch {
-    // ignore duplicate like/unlike
+    // ignore duplicate
   } finally {
     likeLoading.value = false;
   }
@@ -63,22 +63,24 @@ marked.setOptions({
 });
 
 const isAuthor = computed(() =>
-  auth.user && post.value && auth.user.id === post.value.author_id,
+  auth.user && topic.value && auth.user.id === topic.value.author?.id,
 );
 
+const isAdmin = computed(() => auth.user?.is_admin);
+
 const renderedContent = computed(() => {
-  if (!post.value?.content) return "";
-  return marked(post.value.content);
+  if (!topic.value?.content) return "";
+  return marked(topic.value.content);
 });
 
 function handleEdit() {
-  router.push(`/admin/posts/${post.value.id}/edit`);
+  router.push(`/topic/${topic.value.id}/edit`);
 }
 
 async function handleDelete() {
-  if (!await showConfirm("确定删除这篇文章？")) return;
+  if (!await showConfirm("确定删除这个帖子？")) return;
   try {
-    await deletePost(post.value.id);
+    await deleteTopic(topic.value.id);
     router.push("/");
     showToast.success("删除成功");
   } catch {
@@ -86,14 +88,14 @@ async function handleDelete() {
   }
 }
 
-async function fetchPost() {
+async function fetchTopic() {
   loading.value = true;
   error.value = "";
   try {
-    const res = await getPostBySlug(route.params.slug);
-    post.value = res.data;
+    const res = await getTopicById(route.params.id);
+    topic.value = res.data;
   } catch {
-    error.value = "文章不存在或加载失败";
+    error.value = "帖子不存在或加载失败";
   } finally {
     loading.value = false;
   }
@@ -105,10 +107,9 @@ async function handleComment(parentId = null, content = null) {
   commentLoading.value = true;
   commentError.value = "";
   try {
-    await createComment(post.value.id, text, parentId);
+    await createComment(topic.value.id, text, parentId);
     if (!parentId) commentText.value = "";
-    commentError.value = "";
-    await fetchPost();
+    await fetchTopic();
   } catch (e) {
     commentError.value = e.response?.data?.detail || "评论失败";
   } finally {
@@ -121,14 +122,14 @@ function handleReplyCreated({ parentId, content }) {
 }
 
 async function handleCommentDeleted() {
-  await fetchPost();
+  await fetchTopic();
 }
 
-onMounted(fetchPost);
+onMounted(fetchTopic);
 </script>
 
 <template>
-  <div class="post-detail">
+  <div class="topic-detail">
     <div v-if="loading" class="skeleton-detail">
       <div class="skeleton-line w-70 h-32"></div>
       <div class="skeleton-line w-40 h-14"></div>
@@ -138,55 +139,53 @@ onMounted(fetchPost);
     </div>
     <div v-else-if="error" class="state error">
       <p>{{ error }}</p>
-      <button class="btn-retry" @click="fetchPost">重试</button>
+      <button class="btn-retry" @click="fetchTopic">重试</button>
     </div>
 
     <article v-else>
-      <h1>{{ post.title }}</h1>
+      <h1>{{ topic.title }}</h1>
       <div class="meta">
-        <router-link :to="`/user/${post.author?.username}`" class="author">{{ post.author?.username }}</router-link>
-        <span>{{ new Date(post.created_at).toLocaleDateString() }}</span>
+        <router-link :to="`/user/${topic.author?.username}`" class="author">{{ topic.author?.username }}</router-link>
+        <span>{{ new Date(topic.created_at).toLocaleDateString() }}</span>
+        <span>👁️ {{ topic.view_count || 0 }}</span>
         <button
           class="like-btn"
           :class="{ liked: isLiked() }"
           :disabled="likeLoading"
           @click="handleLike"
         >
-          {{ isLiked() ? '❤️' : '🤍' }} {{ post.likes_count || 0 }}
+          {{ isLiked() ? '❤️' : '🤍' }} {{ topic.likes_count || 0 }}
         </button>
-        <span v-if="post.tags?.length" class="tags">
-          <span v-for="t in post.tags" :key="t" class="tag">{{ t }}</span>
-        </span>
       </div>
-      <div v-if="isAuthor" class="author-actions">
+      <div v-if="isAuthor || isAdmin" class="author-actions">
         <button class="btn-edit" @click="handleEdit">编辑</button>
         <button class="btn-delete" @click="handleDelete">删除</button>
       </div>
       <div class="content" v-html="renderedContent"></div>
 
       <section class="comments">
-        <h3>评论 ({{ post.comments?.length || 0 }})</h3>
+        <h3>回复 ({{ topic.comments?.length || 0 }})</h3>
 
         <div v-if="auth.user" class="comment-form">
           <textarea
             v-model="commentText"
-            placeholder="写下你的评论..."
+            placeholder="写下你的回复..."
             rows="3"
           ></textarea>
           <div class="comment-actions">
             <button :disabled="commentLoading" @click="handleComment()">
-              {{ commentLoading ? "提交中..." : "发表评论" }}
+              {{ commentLoading ? "提交中..." : "发表回复" }}
             </button>
             <span v-if="commentError" class="error">{{ commentError }}</span>
           </div>
         </div>
         <p v-else class="login-hint">
-          <router-link to="/login">登录</router-link> 后发表评论
+          <router-link to="/login">登录</router-link> 后发表回复
         </p>
 
-        <div v-if="post.comments?.length" class="comment-list">
+        <div v-if="topic.comments?.length" class="comment-list">
           <CommentItem
-            v-for="c in post.comments"
+            v-for="c in topic.comments"
             :key="c.id"
             :comment="c"
             :auth="auth.user"
@@ -194,14 +193,14 @@ onMounted(fetchPost);
             @comment-deleted="handleCommentDeleted"
           />
         </div>
-        <p v-else class="state">暂无评论</p>
+        <p v-else class="state">暂无回复</p>
       </section>
     </article>
   </div>
 </template>
 
 <style scoped>
-.post-detail { max-width: 700px; margin: 0 auto; }
+.topic-detail { max-width: 700px; margin: 0 auto; }
 .state { text-align: center; padding: 2rem; color: var(--color-text-muted); }
 .error { color: var(--color-danger); }
 .btn-retry {
@@ -216,7 +215,6 @@ onMounted(fetchPost);
 }
 .btn-retry:hover { border-color: var(--color-primary); color: var(--color-primary); }
 
-/* Skeleton */
 .skeleton-detail {
   display: flex;
   flex-direction: column;
@@ -238,13 +236,16 @@ onMounted(fetchPost);
   50% { opacity: 0.8; }
   100% { opacity: 0.4; }
 }
+
 h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--color-text); }
 .meta {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.8rem;
   color: var(--color-text-muted);
   font-size: 0.9rem;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 .author { color: var(--color-text-muted); text-decoration: none; }
 .author:hover { color: var(--color-primary); }
@@ -260,14 +261,7 @@ h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--color-text); }
 .like-btn:hover { border-color: var(--color-danger); }
 .like-btn.liked { border-color: var(--color-danger); }
 .like-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.tags { display: flex; gap: 0.3rem; }
-.tag {
-  background: var(--color-tag-bg);
-  padding: 0.1rem 0.5rem;
-  border-radius: 3px;
-  font-size: 0.8rem;
-  color: var(--color-tag-text);
-}
+
 .author-actions {
   margin-bottom: 1.5rem;
   display: flex;

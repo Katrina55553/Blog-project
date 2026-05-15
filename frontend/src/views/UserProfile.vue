@@ -35,28 +35,30 @@ onMounted(fetchProfile);
       <div class="profile-header">
         <div class="avatar">{{ profile.username[0]?.toUpperCase() }}</div>
         <h1>{{ profile.username }}</h1>
+        <div class="stats">
+          <span>帖子 {{ profile.topic_count || 0 }}</span>
+          <span>回复 {{ profile.comment_count || 0 }}</span>
+        </div>
         <p v-if="profile.bio" class="bio">{{ profile.bio }}</p>
         <a v-if="profile.github_url" :href="profile.github_url" target="_blank" class="github-link">
           GitHub
         </a>
         <p class="join-date">加入于 {{ new Date(profile.created_at).toLocaleDateString() }}</p>
       </div>
-      <section class="user-posts">
-        <h2>文章 ({{ profile.posts?.length || 0 }})</h2>
-        <div v-if="profile.posts?.length">
-          <article v-for="post in profile.posts" :key="post.id" class="card">
-            <router-link :to="`/post/${post.slug}`" class="card-link" :aria-label="post.title"></router-link>
-            <h2 class="title">{{ post.title }}</h2>
-            <p class="summary">{{ post.summary }}</p>
+      <section class="user-topics">
+        <h2>帖子</h2>
+        <div v-if="profile.topics?.length">
+          <article v-for="t in profile.topics" :key="t.id" class="card">
+            <router-link :to="`/topic/${t.id}`" class="card-link" :aria-label="t.title"></router-link>
+            <h2 class="title">{{ t.title }}</h2>
             <div class="meta">
-              <span>{{ new Date(post.created_at).toLocaleDateString() }}</span>
-              <span v-if="post.tags?.length" class="tags">
-                <span v-for="t in post.tags" :key="t" class="tag">{{ t }}</span>
-              </span>
+              <span>{{ new Date(t.created_at).toLocaleDateString() }}</span>
+              <span>💬 {{ t.comment_count || 0 }}</span>
+              <span>❤️ {{ t.likes_count || 0 }}</span>
             </div>
           </article>
         </div>
-        <p v-else class="state">暂无文章</p>
+        <p v-else class="state">暂无帖子</p>
       </section>
     </div>
   </div>
@@ -97,6 +99,14 @@ onMounted(fetchProfile);
   justify-content: center;
   margin: 0 auto 1rem;
 }
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 0.8rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
 h1 { color: var(--color-text); margin-bottom: 0.5rem; }
 .bio { color: var(--color-text-secondary); max-width: 400px; margin: 0 auto 0.5rem; }
 .github-link {
@@ -107,12 +117,12 @@ h1 { color: var(--color-text); margin-bottom: 0.5rem; }
 }
 .join-date { color: var(--color-text-muted); font-size: 0.85rem; margin-top: 0.5rem; }
 
-.user-posts h2 { margin-bottom: 1rem; color: var(--color-text); font-size: 1.2rem; }
+.user-topics h2 { margin-bottom: 1rem; color: var(--color-text); font-size: 1.2rem; }
 
 .card {
   position: relative;
-  padding: 1.4rem;
-  margin-bottom: 0.8rem;
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 0.6rem;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius);
@@ -125,30 +135,17 @@ h1 { color: var(--color-text); margin-bottom: 0.5rem; }
   z-index: 1;
 }
 .title {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--color-text);
   margin: 0 0 0.3rem 0;
 }
 .card:hover .title { color: var(--color-primary); }
-.summary {
-  margin: 0.3rem 0;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-}
 .meta {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.8rem;
   font-size: 0.85rem;
   color: var(--color-text-muted);
-}
-.tags { display: flex; gap: 0.3rem; }
-.tag {
-  background: var(--color-tag-bg);
-  padding: 0.1rem 0.5rem;
-  border-radius: 3px;
-  font-size: 0.8rem;
-  color: var(--color-tag-text);
 }
 </style>
