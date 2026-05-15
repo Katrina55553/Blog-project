@@ -1,8 +1,8 @@
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from auth import hash_password
-from models import Comment, Post, Tag, User, likes
+from models import Comment, Notification, Topic, User, likes
 
 
 # ── User ──
@@ -33,144 +33,167 @@ def change_password(db: Session, user: User, new_password: str) -> None:
     db.commit()
 
 
-# ── Post ──
+# ── Topic ──
 
-def _get_or_create_tags(db: Session, tag_names: list[str]) -> list[Tag]:
-    tags = []
-    for name in tag_names:
-        tag = db.query(Tag).filter_by(name=name).first()
-        if not tag:
-            tag = Tag(name=name)
-            db.add(tag)
-            db.flush()
-        tags.append(tag)
-    return tags
-
-
-def create_post(db: Session, author_id: int, title: str, slug: str,
-                content: str, summary: str, tags: list[str]) -> Post:
-    post = Post(
-        title=title,
-        slug=slug,
-        content=content,
-        summary=summary,
-        author_id=author_id,
-        tags=_get_or_create_tags(db, tags),
-    )
-    db.add(post)
+def create_topic(db: Session, author_id: int, title: str, content: str) -> Topic:
+    topic = Topic(title=title, content=content, author_id=author_id)
+    db.add(topic)
+    db.query(User).filter_by(id=author_id).update({"topic_count": User.topic_count + 1})
     db.commit()
-    db.refresh(post)
-    return post
+    db.refresh(topic)
+    return topic
 
 
-def get_posts(db: Session, page: int = 1, size: int = 10, tag: str = "", q: str = ""):
-    query = db.query(Post).options(joinedload(Post.author), joinedload(Post.tags))
-    if tag:
-        query = query.join(Post.tags).filter(Tag.name == tag)
+def get_topics(db: Session, page: int = 1, size: int = 10, q: str = ""):
+    query = db.query(Topic).options(joinedload(Topic.author))
     if q:
-        query = query.filter(or_(Post.title.ilike(f"%{q}%"), Post.content.ilike(f"%{q}%")))
+        query = query.filter(or_(Topic.title.ilike(f"%{q}%"), Topic.content.ilike(f"%{q}%")))
     total = query.count()
-    posts = (
-        query.order_by(Post.created_at.desc())
+    topics = (
+        query.order_by(Topic.created_at.desc())
         .offset((page - 1) * size)
         .limit(size)
         .all()
     )
-    return posts, total
+    result = []
+    for t in topics:
+        comment_count = db.query(func.count(Comment.id)).filter_by(topic_id=t.id).scalar()
+        like_count = db.query(func.count(likes.c.user_id)).filter(likes.c.topic_id == t.id).scalar()
+        last_comment = (
+            db.query(Comment).filter_by(topic_id=t.id).order_by(Comment.created_at.desc()).first()
+        )
+        result.append({
+            "id": t.id,
+            "title": t.title,
+            "author": {"id": t.author.id, "username": t.author.username, "avatar": t.author.avatar} if t.author else None,
+            "view_count": t.view_count,
+            "comment_count": comment_count,
+            "likes_count": like_count,
+            "last_comment_at": last_comment.created_at if last_comment else None,
+            "created_at": t.created_at,
+        })
+    return result, total
 
 
-def get_post_by_slug(db: Session, slug: str) -> Post | None:
+def get_topic_by_id(db: Session, topic_id: int) -> Topic | None:
     return (
-        db.query(Post)
-        .options(joinedload(Post.author), joinedload(Post.tags), joinedload(Post.comments).joinedload(Comment.author), joinedload(Post.likes))
-        .filter_by(slug=slug)
+        db.query(Topic)
+        .options(
+            joinedload(Topic.author),
+            joinedload(Topic.comments).joinedload(Comment.author),
+            joinedload(Topic.likes),
+        )
+        .filter_by(id=topic_id)
         .first()
     )
 
 
-def get_post_by_id(db: Session, post_id: int) -> Post | None:
-    return db.query(Post).options(joinedload(Post.author), joinedload(Post.tags)).filter_by(id=post_id).first()
+def get_topic_for_edit(db: Session, topic_id: int) -> Topic | None:
+    return db.query(Topic).options(joinedload(Topic.author)).filter_by(id=topic_id).first()
 
 
-def get_posts_by_user(db: Session, user_id: int, page: int = 1, size: int = 10):
-    query = db.query(Post).options(joinedload(Post.author), joinedload(Post.tags)).filter_by(author_id=user_id)
+def get_topics_by_user(db: Session, user_id: int, page: int = 1, size: int = 10):
+    query = db.query(Topic).options(joinedload(Topic.author)).filter_by(author_id=user_id)
     total = query.count()
-    posts = (
-        query.order_by(Post.created_at.desc())
+    topics = (
+        query.order_by(Topic.created_at.desc())
         .offset((page - 1) * size)
         .limit(size)
         .all()
     )
-    return posts, total
+    result = []
+    for t in topics:
+        comment_count = db.query(func.count(Comment.id)).filter_by(topic_id=t.id).scalar()
+        like_count = db.query(func.count(likes.c.user_id)).filter(likes.c.topic_id == t.id).scalar()
+        result.append({
+            "id": t.id,
+            "title": t.title,
+            "author": {"id": t.author.id, "username": t.author.username, "avatar": t.author.avatar} if t.author else None,
+            "view_count": t.view_count,
+            "comment_count": comment_count,
+            "likes_count": like_count,
+            "last_comment_at": None,
+            "created_at": t.created_at,
+        })
+    return result, total
 
 
-def update_post(db: Session, post: Post, data: dict) -> Post:
-    for field in ("title", "slug", "content", "summary"):
+def update_topic(db: Session, topic: Topic, data: dict) -> Topic:
+    for field in ("title", "content"):
         if data.get(field) is not None:
-            setattr(post, field, data[field])
-    if data.get("tags") is not None:
-        post.tags = _get_or_create_tags(db, data["tags"])
+            setattr(topic, field, data[field])
     db.commit()
-    db.refresh(post)
-    return post
+    db.refresh(topic)
+    return topic
 
 
-def delete_post(db: Session, post: Post) -> None:
-    db.delete(post)
+def delete_topic(db: Session, topic: Topic) -> None:
+    user_id = topic.author_id
+    db.delete(topic)
+    db.query(User).filter_by(id=user_id).update({"topic_count": User.topic_count - 1})
     db.commit()
 
 
-# ── Tag ──
-
-def get_all_tags(db: Session) -> list[Tag]:
-    return db.query(Tag).all()
-
-
-def get_user_profile(db: Session, username: str) -> dict | None:
-    user = db.query(User).filter_by(username=username).first()
-    if not user:
-        return None
-    posts = (
-        db.query(Post)
-        .options(joinedload(Post.tags))
-        .filter_by(author_id=user.id, status="published")
-        .order_by(Post.created_at.desc())
-        .all()
-    )
-    return {"user": user, "posts": posts}
+def increment_view_count(db: Session, topic: Topic) -> None:
+    topic.view_count = (topic.view_count or 0) + 1
+    db.commit()
 
 
 # ── Like ──
 
-def like_post(db: Session, user_id: int, post_id: int) -> dict:
+def like_topic(db: Session, user_id: int, topic_id: int) -> dict:
     from sqlalchemy.exc import IntegrityError
     try:
-        db.execute(likes.insert().values(user_id=user_id, post_id=post_id))
+        db.execute(likes.insert().values(user_id=user_id, topic_id=topic_id))
         db.commit()
     except IntegrityError:
         db.rollback()
-    count = db.query(likes).filter_by(post_id=post_id).count()
+    count = db.query(func.count(likes.c.user_id)).filter(likes.c.topic_id == topic_id).scalar()
     return {"liked": True, "likes_count": count}
 
 
-def unlike_post(db: Session, user_id: int, post_id: int) -> dict:
-    db.execute(likes.delete().where(likes.c.user_id == user_id, likes.c.post_id == post_id))
+def unlike_topic(db: Session, user_id: int, topic_id: int) -> dict:
+    db.execute(likes.delete().where(likes.c.user_id == user_id, likes.c.topic_id == topic_id))
     db.commit()
-    count = db.query(likes).filter_by(post_id=post_id).count()
+    count = db.query(func.count(likes.c.user_id)).filter(likes.c.topic_id == topic_id).scalar()
     return {"liked": False, "likes_count": count}
 
 
 # ── Comment ──
 
-def create_comment(db: Session, user_id: int, post_id: int, content: str, parent_id: int | None = None) -> Comment:
+def create_comment(db: Session, user_id: int, topic_id: int, content: str, parent_id: int | None = None) -> Comment:
     if parent_id:
-        parent = db.query(Comment).filter_by(id=parent_id, post_id=post_id).first()
+        parent = db.query(Comment).filter_by(id=parent_id, topic_id=topic_id).first()
         if not parent:
-            raise ValueError("Parent comment not found under this post")
-    comment = Comment(content=content, post_id=post_id, user_id=user_id, parent_id=parent_id)
+            raise ValueError("Parent comment not found under this topic")
+    comment = Comment(content=content, topic_id=topic_id, user_id=user_id, parent_id=parent_id)
     db.add(comment)
+    db.query(User).filter_by(id=user_id).update({"comment_count": User.comment_count + 1})
     db.commit()
     db.refresh(comment)
+
+    # Notify topic author (don't self-notify)
+    topic = db.query(Topic).filter_by(id=topic_id).first()
+    if topic and topic.author_id != user_id:
+        notif = Notification(
+            user_id=topic.author_id,
+            type="reply",
+            topic_id=topic_id,
+            comment_id=comment.id,
+        )
+        db.add(notif)
+
+    # Notify parent comment author (don't self-notify, don't double-notify topic author)
+    if parent_id and parent and parent.user_id != user_id and parent.user_id != topic.author_id:
+        notif = Notification(
+            user_id=parent.user_id,
+            type="reply",
+            topic_id=topic_id,
+            comment_id=comment.id,
+        )
+        db.add(notif)
+
+    db.commit()
     return comment
 
 
@@ -179,19 +202,20 @@ def get_comment_by_id(db: Session, comment_id: int) -> Comment | None:
 
 
 def delete_comment(db: Session, comment: Comment) -> None:
+    user_id = comment.user_id
     db.delete(comment)
+    db.query(User).filter_by(id=user_id).update({"comment_count": User.comment_count - 1})
     db.commit()
 
 
 def build_comment_tree(comments: list[Comment]) -> list[dict]:
-    """Convert flat comment list to nested tree for API response."""
     lookup = {}
     roots = []
     for c in comments:
         node = {
             "id": c.id,
             "content": c.content,
-            "post_id": c.post_id,
+            "topic_id": c.topic_id,
             "user_id": c.user_id,
             "username": c.username,
             "parent_id": c.parent_id,
@@ -208,3 +232,41 @@ def build_comment_tree(comments: list[Comment]) -> list[dict]:
             roots.append(node)
 
     return roots
+
+
+# ── User Profile ──
+
+def get_user_profile(db: Session, username: str) -> dict | None:
+    user = db.query(User).filter_by(username=username).first()
+    if not user:
+        return None
+    topics, _ = get_topics_by_user(db, user.id, page=1, size=20)
+    return {"user": user, "topics": topics}
+
+
+# ── Notification ──
+
+def get_notifications(db: Session, user_id: int, page: int = 1, size: int = 20):
+    query = db.query(Notification).filter_by(user_id=user_id)
+    total = query.count()
+    items = (
+        query.order_by(Notification.created_at.desc())
+        .offset((page - 1) * size)
+        .limit(size)
+        .all()
+    )
+    return items, total
+
+
+def get_unread_notification_count(db: Session, user_id: int) -> int:
+    return db.query(func.count(Notification.id)).filter_by(user_id=user_id, is_read=False).scalar()
+
+
+def mark_notification_read(db: Session, notif_id: int, user_id: int) -> None:
+    db.query(Notification).filter_by(id=notif_id, user_id=user_id).update({"is_read": True})
+    db.commit()
+
+
+def mark_all_notifications_read(db: Session, user_id: int) -> None:
+    db.query(Notification).filter_by(user_id=user_id, is_read=False).update({"is_read": True})
+    db.commit()
