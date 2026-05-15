@@ -29,6 +29,8 @@ class UserResponse(BaseModel):
     bio: str
     github_url: str
     is_admin: bool
+    topic_count: int = 0
+    comment_count: int = 0
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -45,36 +47,30 @@ class PasswordChange(BaseModel):
     new_password: str
 
 
-# ── Post ──
+# ── Topic ──
 
-class PostCreate(BaseModel):
+class TopicCreate(BaseModel):
     title: str
-    slug: str
     content: str = ""
-    summary: str = ""
-    tags: list[str] = []
 
 
-class PostUpdate(BaseModel):
+class TopicUpdate(BaseModel):
     title: str | None = None
-    slug: str | None = None
     content: str | None = None
-    summary: str | None = None
-    tags: list[str] | None = None
 
 
 # ── Comment ──
 
 class CommentCreate(BaseModel):
     content: str
-    post_id: int
+    topic_id: int
     parent_id: int | None = None
 
 
 class CommentResponse(BaseModel):
     id: int
     content: str
-    post_id: int
+    topic_id: int
     user_id: int
     username: str
     parent_id: int | None = None
@@ -89,7 +85,7 @@ class CommentResponse(BaseModel):
         return getattr(v, "username", v)
 
 
-# ── Post responses (after CommentResponse) ──
+# ── Topic responses ──
 
 class AuthorInfo(BaseModel):
     id: int
@@ -99,45 +95,35 @@ class AuthorInfo(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class PostListResponse(BaseModel):
+class TopicListResponse(BaseModel):
     id: int
     title: str
-    slug: str
-    summary: str
-    author: AuthorInfo
+    author: AuthorInfo | None = None
+    view_count: int = 0
+    comment_count: int = 0
+    likes_count: int = 0
+    last_comment_at: datetime | None = None
     created_at: datetime
-    tags: list[str]
 
     model_config = {"from_attributes": True}
 
-    @field_validator("tags", mode="before")
-    @classmethod
-    def coerce_tags(cls, v):
-        return [getattr(t, "name", t) for t in v]
 
-
-class PostDetailResponse(BaseModel):
+class TopicDetailResponse(BaseModel):
     id: int
     title: str
-    slug: str
     content: str
-    summary: str
-    author: AuthorInfo
-    status: str
+    author: AuthorInfo | None = None
+    view_count: int = 0
     created_at: datetime
     updated_at: datetime
-    tags: list[str]
     likes_count: int = 0
     is_liked: bool = False
     comments: list[CommentResponse] = []
 
     model_config = {"from_attributes": True}
 
-    @field_validator("tags", mode="before")
-    @classmethod
-    def coerce_tags(cls, v):
-        return [getattr(t, "name", t) for t in v]
 
+# ── User profile ──
 
 class UserProfileResponse(BaseModel):
     id: int
@@ -145,16 +131,22 @@ class UserProfileResponse(BaseModel):
     avatar: str
     bio: str
     github_url: str
+    topic_count: int = 0
+    comment_count: int = 0
     created_at: datetime
-    posts: list[PostListResponse] = []
+    topics: list[TopicListResponse] = []
 
     model_config = {"from_attributes": True}
 
 
-# ── Tag ──
+# ── Notification ──
 
-class TagResponse(BaseModel):
+class NotificationResponse(BaseModel):
     id: int
-    name: str
+    type: str
+    topic_id: int | None = None
+    comment_id: int | None = None
+    is_read: bool
+    created_at: datetime
 
     model_config = {"from_attributes": True}
